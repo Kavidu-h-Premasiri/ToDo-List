@@ -11,7 +11,7 @@ import {
   Plus,
   ArrowRight 
 } from 'lucide-react';
-import { taskService } from '../../services/api';
+import { taskService } from '../../services/api.ts';
 import { Link } from 'react-router-dom';
 
 export const DashboardPage: React.FC = () => {

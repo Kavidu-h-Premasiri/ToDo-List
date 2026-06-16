@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { Bell, Menu, LogOut, User as UserIcon } from 'lucide-react';
+import { Menu, ChevronDown } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { NotificationBell } from '../Notifications/NotificationBell';
 
 export const Navbar: React.FC = () => {
   const [showDropdown, setShowDropdown] = useState(false);
@@ -17,14 +18,8 @@ export const Navbar: React.FC = () => {
   };
 
   const handleLogout = () => {
-    // Clear all user data from localStorage
     localStorage.removeItem('token');
     localStorage.removeItem('user');
-    
-    // Close dropdown if open
-    setShowDropdown(false);
-    
-    // Navigate to login page
     navigate('/login');
   };
 
@@ -56,11 +51,8 @@ export const Navbar: React.FC = () => {
 
         {/* Right Side Actions */}
         <div className="flex items-center gap-3">
-          {/* Notifications */}
-          <button className="relative p-2 text-gray-400 hover:text-gray-600 transition-colors rounded-lg hover:bg-gray-100">
-            <Bell className="w-5 h-5 sm:w-6 sm:h-6" />
-            <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
-          </button>
+          {/* Notification Bell */}
+          <NotificationBell />
 
           {/* User Dropdown */}
           <div className="relative">
@@ -90,14 +82,12 @@ export const Navbar: React.FC = () => {
                       onClick={goToProfile}
                       className="w-full flex items-center gap-3 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
                     >
-                      <UserIcon className="w-4 h-4" />
                       Profile Settings
                     </button>
                     <button 
                       onClick={handleLogout}
                       className="w-full flex items-center gap-3 px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-colors mt-1"
                     >
-                      <LogOut className="w-4 h-4" />
                       Sign Out
                     </button>
                   </div>

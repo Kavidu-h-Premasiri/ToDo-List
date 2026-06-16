@@ -8,7 +8,6 @@ import (
 )
 
 func SetupRoutes(r *gin.Engine) {
-	// Serve static files for uploaded images
 	r.Static("/uploads", "./uploads")
 
 	// Public routes
@@ -30,7 +29,32 @@ func SetupRoutes(r *gin.Engine) {
 		api.GET("/user/profile-photo", controllers.GetProfilePhoto)
 		api.DELETE("/user/profile-photo", controllers.DeleteProfilePhoto)
 
-		// Task routes
+		// Notification routes
+		api.GET("/notifications", controllers.GetMyNotifications)
+		api.GET("/notifications/unread", controllers.GetUnreadCount)
+		api.PUT("/notifications/:id/read", controllers.MarkNotificationAsRead)
+		api.PUT("/notifications/read-all", controllers.MarkAllNotificationsAsRead)
+		api.DELETE("/notifications/:id", controllers.DeleteNotification)
+
+		// Team routes
+		api.POST("/teams", controllers.CreateTeam)
+		api.GET("/teams", controllers.GetMyTeams)
+		api.GET("/teams/:id", controllers.GetTeamDetails)
+		api.POST("/teams/:id/invite", controllers.InviteMember)
+		api.PUT("/teams/:id/members/:memberId", controllers.UpdateMemberRole)
+		api.DELETE("/teams/:id/members/:memberId", controllers.RemoveMember)
+
+		// Team Task routes
+		api.GET("/teams/:id/members", controllers.GetTeamMembersList)
+		api.POST("/teams/:id/tasks", controllers.CreateTeamTask)
+		api.GET("/teams/:id/tasks", controllers.GetTeamTasks)
+		api.PUT("/teams/:id/tasks/:taskId", controllers.UpdateTeamTask)
+		api.DELETE("/teams/:id/tasks/:taskId", controllers.DeleteTeamTask)
+
+		// My tasks (for members to see their assigned tasks)
+		api.GET("/my-tasks", controllers.GetMyAssignedTasks)
+
+		// Personal task routes
 		api.POST("/tasks", controllers.CreateTask)
 		api.GET("/tasks", controllers.GetTasks)
 		api.GET("/tasks/stats", controllers.GetTaskStats)
@@ -39,7 +63,6 @@ func SetupRoutes(r *gin.Engine) {
 		api.DELETE("/tasks/:id", controllers.DeleteTask)
 	}
 
-	// Health check
 	r.GET("/health", func(c *gin.Context) {
 		c.JSON(200, gin.H{"status": "ok"})
 	})

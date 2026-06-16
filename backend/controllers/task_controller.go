@@ -166,3 +166,51 @@ func GetTaskStats(c *gin.Context) {
 
 	c.JSON(http.StatusOK, stats)
 }
+
+// GetMyAssignedTasks - Get tasks assigned to current user
+func GetMyAssignedTasks(c *gin.Context) {
+	userID, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
+		return
+	}
+
+	var tasks []models.Task
+	query := database.DB.Where("assigned_to = ?", userID).Order("created_at DESC")
+
+	if status := c.Query("status"); status != "" {
+		query = query.Where("status = ?", status)
+	}
+
+	query.Find(&tasks)
+
+	type TaskWithDetails struct {
+		models.Task
+		TeamName       string `json:"team_name"`
+		AssignedByName string `json:"assigned_by_name"`
+	}
+
+	result := make([]TaskWithDetails, 0)
+	for _, task := range tasks {
+		var team models.Team
+		var assigner models.User
+
+		if task.TeamID != nil {
+			database.DB.First(&team, *task.TeamID)
+		}
+		if task.AssignedBy != nil {
+			database.DB.First(&assigner, *task.AssignedBy)
+		}
+
+		result = append(result, TaskWithDetails{
+			Task:           task,
+			TeamName:       team.Name,
+			AssignedByName: assigner.Name,
+		})
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"tasks": result,
+		"total": len(result),
+	})
+}

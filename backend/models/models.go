@@ -22,14 +22,41 @@ type Task struct {
 	ID          uint           `gorm:"primaryKey" json:"id"`
 	Title       string         `gorm:"not null" json:"title"`
 	Description string         `json:"description"`
-	Status      string         `gorm:"default:pending" json:"status"`  // pending, in_progress, completed
-	Priority    string         `gorm:"default:medium" json:"priority"` // low, medium, high
+	Status      string         `gorm:"default:pending" json:"status"`
+	Priority    string         `gorm:"default:medium" json:"priority"`
 	DueDate     *time.Time     `json:"due_date"`
 	UserID      uint           `gorm:"not null" json:"user_id"`
+	TeamID      *uint          `json:"team_id"`
+	AssignedTo  *uint          `json:"assigned_to"`
+	AssignedBy  *uint          `json:"assigned_by"`
 	User        User           `gorm:"foreignKey:UserID" json:"-"`
 	CreatedAt   time.Time      `json:"created_at"`
 	UpdatedAt   time.Time      `json:"updated_at"`
 	DeletedAt   gorm.DeletedAt `gorm:"index" json:"-"`
+}
+
+type Team struct {
+	ID          uint           `gorm:"primaryKey" json:"id"`
+	Name        string         `gorm:"not null" json:"name"`
+	Description string         `json:"description"`
+	CreatedBy   uint           `gorm:"not null" json:"created_by"`
+	CreatedAt   time.Time      `json:"created_at"`
+	UpdatedAt   time.Time      `json:"updated_at"`
+	DeletedAt   gorm.DeletedAt `gorm:"index" json:"-"`
+}
+
+type TeamMember struct {
+	ID        uint           `gorm:"primaryKey" json:"id"`
+	TeamID    uint           `gorm:"not null" json:"team_id"`
+	UserID    uint           `gorm:"not null" json:"user_id"`
+	Role      string         `gorm:"default:member" json:"role"`
+	Status    string         `gorm:"default:active" json:"status"`
+	InvitedBy uint           `json:"invited_by"`
+	CreatedAt time.Time      `json:"created_at"`
+	UpdatedAt time.Time      `json:"updated_at"`
+	DeletedAt gorm.DeletedAt `gorm:"index" json:"-"`
+	Team      Team           `gorm:"foreignKey:TeamID" json:"team,omitempty"`
+	User      User           `gorm:"foreignKey:UserID" json:"user,omitempty"`
 }
 
 type LoginRequest struct {
@@ -51,6 +78,20 @@ type UpdateTaskRequest struct {
 	DueDate     *time.Time `json:"due_date"`
 }
 
+type CreateTeamRequest struct {
+	Name        string `json:"name" binding:"required"`
+	Description string `json:"description"`
+}
+
+type InviteRequest struct {
+	Email string `json:"email" binding:"required,email"`
+	Role  string `json:"role" binding:"required,oneof=admin member"`
+}
+
+type UpdateMemberRoleRequest struct {
+	Role string `json:"role" binding:"required,oneof=admin member"`
+}
+
 type AuthResponse struct {
 	Token string `json:"token"`
 	User  User   `json:"user"`
@@ -63,4 +104,43 @@ type ErrorResponse struct {
 type SuccessResponse struct {
 	Message string      `json:"message"`
 	Data    interface{} `json:"data,omitempty"`
+}
+
+type AssignTaskRequest struct {
+	AssignedTo uint `json:"assigned_to" binding:"required"`
+}
+
+type TeamTaskRequest struct {
+	Title       string     `json:"title" binding:"required"`
+	Description string     `json:"description"`
+	Status      string     `json:"status"`
+	Priority    string     `json:"priority"`
+	DueDate     *time.Time `json:"due_date"`
+	AssignedTo  uint       `json:"assigned_to" binding:"required"`
+}
+
+// Add this after your existing models
+type Notification struct {
+	ID        uint           `gorm:"primaryKey" json:"id"`
+	UserID    uint           `gorm:"not null" json:"user_id"`
+	Type      string         `gorm:"not null" json:"type"` // task_assigned, task_updated, task_completed, task_mentioned, task_deleted
+	Title     string         `gorm:"not null" json:"title"`
+	Message   string         `gorm:"not null" json:"message"`
+	Data      string         `gorm:"type:jsonb" json:"data"`
+	IsRead    bool           `gorm:"default:false" json:"is_read"`
+	ReadAt    *time.Time     `json:"read_at"`
+	CreatedAt time.Time      `json:"created_at"`
+	UpdatedAt time.Time      `json:"updated_at"`
+	DeletedAt gorm.DeletedAt `gorm:"index" json:"-"`
+	User      User           `gorm:"foreignKey:UserID" json:"user,omitempty"`
+}
+
+type TaskMention struct {
+	ID          uint      `gorm:"primaryKey" json:"id"`
+	TaskID      uint      `gorm:"not null" json:"task_id"`
+	UserID      uint      `gorm:"not null" json:"user_id"`
+	MentionedBy uint      `gorm:"not null" json:"mentioned_by"`
+	CreatedAt   time.Time `json:"created_at"`
+	Task        Task      `gorm:"foreignKey:TaskID" json:"task,omitempty"`
+	User        User      `gorm:"foreignKey:UserID" json:"user,omitempty"`
 }

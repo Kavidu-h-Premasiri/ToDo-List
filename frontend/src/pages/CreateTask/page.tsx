@@ -3,7 +3,7 @@ import { Sidebar } from '../../components/Layout/Sidebar';
 import { Navbar } from '../../components/Layout/Navbar';
 import { Card } from '../../components/UI/Card';
 import { Button } from '../../components/UI/Button';
-import { taskService } from '../../services/api';
+import { taskService } from '../../services/api.ts';
 import { useNavigate } from 'react-router-dom';
 import { AlertCircle, CheckCircle } from 'lucide-react';
 

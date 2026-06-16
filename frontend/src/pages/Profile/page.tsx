@@ -4,7 +4,7 @@ import { Navbar } from '../../components/Layout/Navbar';
 import { Card } from '../../components/UI/Card';
 import { Button } from '../../components/UI/Button';
 import { User, Mail, Save, X, Camera, Trash2, AlertCircle, CheckCircle, Upload } from 'lucide-react';
-import { authService } from '../../services/api';
+import { authService } from '../../services/api.ts';
 
 export const ProfilePage: React.FC = () => {
   const [isEditing, setIsEditing] = useState(false);

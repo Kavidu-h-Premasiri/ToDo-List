@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Mail, Lock, LogIn, ChevronRight, Sparkles, AlertCircle, Eye, EyeOff } from 'lucide-react';
-import { authService } from '../../services/api';
+import { authService } from '../../services/api.ts';
 
 export const LoginPage: React.FC = () => {
   const navigate = useNavigate();
