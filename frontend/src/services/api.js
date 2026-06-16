@@ -43,6 +43,34 @@ const apiCall = async (endpoint, method = 'GET', data = null) => {
   }
 };
 
+// File upload helper
+const fileUpload = async (endpoint, file) => {
+  const token = getToken();
+  const formData = new FormData();
+  formData.append('profile_photo', file);
+  
+  try {
+    const response = await fetch(`${API_URL}${endpoint}`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+      body: formData,
+    });
+    
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.error || 'Upload failed');
+    }
+    
+    const responseData = await response.json();
+    return responseData;
+  } catch (error) {
+    console.error('Upload Error:', error);
+    throw error;
+  }
+};
+
 // Auth Services
 export const authService = {
   register: async (userData) => {
@@ -56,6 +84,24 @@ export const authService = {
   },
   
   getCurrentUser: () => apiCall('/user', 'GET'),
+  
+  // Profile photo methods
+  uploadProfilePhoto: async (file) => {
+    const response = await fileUpload('/user/profile-photo', file);
+    return response;
+  },
+  
+  getProfilePhoto: async () => {
+    try {
+      const response = await apiCall('/user/profile-photo', 'GET');
+      return response;
+    } catch (error) {
+      console.error('Error getting profile photo:', error);
+      return { profile_photo: null };
+    }
+  },
+  
+  deleteProfilePhoto: () => apiCall('/user/profile-photo', 'DELETE'),
 };
 
 // Task Services
@@ -92,11 +138,4 @@ export const taskService = {
   },
 };
 
-// Teams Services (for future implementation)
-export const teamService = {
-  getTeams: () => apiCall('/teams', 'GET'),
-  getTeamMembers: (teamId) => apiCall(`/teams/${teamId}/members`, 'GET'),
-  inviteMember: (email, role) => apiCall('/teams/invite', 'POST', { email, role }),
-};
-
-export default { authService, taskService, teamService };
+export default { authService, taskService };

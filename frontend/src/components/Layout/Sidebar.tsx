@@ -13,11 +13,16 @@ export const Sidebar: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const [user, setUser] = useState<any>({});
+  const [profilePhoto, setProfilePhoto] = useState<string | null>(null);
 
   useEffect(() => {
     const userData = localStorage.getItem('user');
     if (userData) {
-      setUser(JSON.parse(userData));
+      const parsedUser = JSON.parse(userData);
+      setUser(parsedUser);
+      if (parsedUser.profile_photo) {
+        setProfilePhoto(`http://localhost:8080/${parsedUser.profile_photo}`);
+      }
     }
   }, []);
 
@@ -29,15 +34,9 @@ export const Sidebar: React.FC = () => {
   ];
 
   const handleLogout = () => {
-    // Clear all user data from localStorage
     localStorage.removeItem('token');
     localStorage.removeItem('user');
-    
-    // Navigate to login page
     navigate('/login');
-    
-    // Optional: Force a hard reload to clear any cached state
-    // window.location.href = '/login';
   };
 
   return (
@@ -61,8 +60,12 @@ export const Sidebar: React.FC = () => {
 
         <div className="p-4 border-b border-gray-100">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-xl flex items-center justify-center text-white font-semibold text-lg">
-              {user.name?.charAt(0) || 'U'}
+            <div className="w-10 h-10 rounded-xl overflow-hidden bg-gradient-to-r from-blue-500 to-indigo-500 flex items-center justify-center text-white font-semibold text-lg">
+              {profilePhoto ? (
+                <img src={profilePhoto} alt={user.name} className="w-full h-full object-cover" />
+              ) : (
+                user.name?.charAt(0) || 'U'
+              )}
             </div>
             <div>
               <p className="font-semibold text-gray-800">{user.name || 'User'}</p>

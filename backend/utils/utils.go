@@ -1,6 +1,8 @@
 package utils
 
 import (
+	"crypto/rand"
+	"encoding/hex"
 	"os"
 	"time"
 
@@ -43,4 +45,11 @@ func ValidateToken(tokenString string) (uint, error) {
 	}
 
 	return 0, jwt.ErrSignatureInvalid
+}
+
+// GenerateRandomString generates a random string for file names
+func GenerateRandomString() string {
+	bytes := make([]byte, 16)
+	rand.Read(bytes)
+	return hex.EncodeToString(bytes)
 }

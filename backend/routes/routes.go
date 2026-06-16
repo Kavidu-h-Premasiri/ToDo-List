@@ -8,6 +8,9 @@ import (
 )
 
 func SetupRoutes(r *gin.Engine) {
+	// Serve static files for uploaded images
+	r.Static("/uploads", "./uploads")
+
 	// Public routes
 	auth := r.Group("/api/auth")
 	{
@@ -21,6 +24,11 @@ func SetupRoutes(r *gin.Engine) {
 	{
 		// User routes
 		api.GET("/user", controllers.GetCurrentUser)
+
+		// Profile photo routes
+		api.POST("/user/profile-photo", controllers.UploadProfilePhoto)
+		api.GET("/user/profile-photo", controllers.GetProfilePhoto)
+		api.DELETE("/user/profile-photo", controllers.DeleteProfilePhoto)
 
 		// Task routes
 		api.POST("/tasks", controllers.CreateTask)
