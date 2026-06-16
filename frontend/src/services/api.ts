@@ -7,6 +7,7 @@ interface User {
   email: string;
   profile_photo?: string;
   created_at: string;
+  updated_at?: string;
 }
 
 interface AuthResponse {
@@ -26,7 +27,7 @@ interface TeamTaskData {
   title: string;
   description?: string;
   priority?: string;
-  status?: string;  // Add this line
+  status?: string;
   due_date?: string | null;
   assigned_to: number;
 }
@@ -42,6 +43,7 @@ interface TeamMemberData {
   email: string;
   role: string;
   profile_photo?: string;
+  joined_at?: string;
 }
 
 interface LoginCredentials {
@@ -59,13 +61,7 @@ interface ApiResponse<T = unknown> {
   [key: string]: T;
 }
 
-interface NotificationResponse {
-  notifications: Notification[];
-  total: number;
-  page: number;
-  limit: number;
-}
-
+// Notification Types
 interface Notification {
   id: number;
   type: string;
@@ -77,8 +73,117 @@ interface Notification {
   created_at: string;
 }
 
+interface NotificationResponse {
+  notifications: Notification[];
+  total: number;
+  page: number;
+  limit: number;
+}
+
 interface UnreadCountResponse {
   unread_count: number;
+}
+
+// Message Types
+interface Message {
+  id: number;
+  team_id: number;
+  sender_id: number;
+  content: string;
+  is_read: boolean;
+  created_at: string;
+  sender?: {
+    id: number;
+    name: string;
+    email: string;
+  };
+}
+
+interface Chat {
+  team_id: number;
+  team_name: string;
+  last_message: string;
+  last_message_at: string;
+  sender_name: string;
+  unread_count: number;
+}
+
+interface ChatsResponse {
+  chats: Chat[];
+}
+
+interface MessagesResponse {
+  messages: Message[];
+  total: number;
+  page: number;
+  limit: number;
+}
+
+// Task Types
+interface Task {
+  id: number;
+  title: string;
+  description: string;
+  status: string;
+  priority: string;
+  due_date: string | null;
+  created_at: string;
+  updated_at: string;
+  user_id: number;
+  assigned_to?: number;
+  team_id?: number;
+  assignee_name?: string;
+}
+
+interface TaskStats {
+  total: number;
+  completed: number;
+  in_progress: number;
+  pending: number;
+  high_priority: number;
+  medium_priority: number;
+  low_priority: number;
+}
+
+interface TasksResponse {
+  tasks: Task[];
+  total: number;
+  page: number;
+  limit: number;
+}
+
+// Team Types
+interface Team {
+  id: number;
+  name: string;
+  description: string;
+  role: string;
+  created_at: string;
+}
+
+interface TeamMember {
+  id: number;
+  name: string;
+  email: string;
+  role: string;
+  joined_at: string;
+  profile_photo?: string;
+}
+
+interface TeamDetailsResponse {
+  team: {
+    id: number;
+    name: string;
+    description: string;
+    created_by: number;
+    created_at: string;
+  };
+  members: TeamMember[];
+  user_role: string;
+}
+
+interface TeamsResponse {
+  teams: Team[];
 }
 
 // ============ HELPERS ============
@@ -179,91 +284,142 @@ export const authService = {
 
 // ============ TASK SERVICES ============
 export const taskService = {
-  getTasks: <T = ApiResponse>(params: Record<string, string | number> = {}): Promise<T> => {
+  getTasks: (params: Record<string, string | number> = {}): Promise<TasksResponse> => {
     const queryString = new URLSearchParams(params as Record<string, string>).toString();
-    return apiCall<T>(`/tasks${queryString ? `?${queryString}` : ''}`, 'GET');
+    return apiCall<TasksResponse>(`/tasks${queryString ? `?${queryString}` : ''}`, 'GET');
   },
 
-  createTask: <T = ApiResponse>(taskData: TaskData): Promise<T> =>
-    apiCall<T>('/tasks', 'POST', taskData),
+  createTask: (taskData: TaskData): Promise<{ message: string; data: Task }> =>
+    apiCall<{ message: string; data: Task }>('/tasks', 'POST', taskData),
 
-  getTask: <T = ApiResponse>(id: number | string): Promise<T> =>
-    apiCall<T>(`/tasks/${id}`, 'GET'),
+  getTask: (id: number | string): Promise<Task> =>
+    apiCall<Task>(`/tasks/${id}`, 'GET'),
 
-  updateTask: <T = ApiResponse>(id: number | string, taskData: Partial<TaskData>): Promise<T> =>
-    apiCall<T>(`/tasks/${id}`, 'PUT', taskData),
+  updateTask: (id: number | string, taskData: Partial<TaskData>): Promise<{ message: string; data: Task }> =>
+    apiCall<{ message: string; data: Task }>(`/tasks/${id}`, 'PUT', taskData),
 
-  deleteTask: <T = ApiResponse>(id: number | string): Promise<T> =>
-    apiCall<T>(`/tasks/${id}`, 'DELETE'),
+  deleteTask: (id: number | string): Promise<{ message: string }> =>
+    apiCall<{ message: string }>(`/tasks/${id}`, 'DELETE'),
 
-  getStats: <T = ApiResponse>(): Promise<T> =>
-    apiCall<T>('/tasks/stats', 'GET'),
+  getStats: (): Promise<TaskStats> =>
+    apiCall<TaskStats>('/tasks/stats', 'GET'),
 };
 
 // ============ TEAM SERVICES ============
 export const teamService = {
-  createTeam: <T = ApiResponse>(teamData: TeamData): Promise<T> =>
-    apiCall<T>('/teams', 'POST', teamData),
+  createTeam: (teamData: TeamData): Promise<{ message: string; team: Team }> =>
+    apiCall<{ message: string; team: Team }>('/teams', 'POST', teamData),
 
-  getMyTeams: <T = ApiResponse>(): Promise<T> =>
-    apiCall<T>('/teams', 'GET'),
+  getMyTeams: (): Promise<TeamsResponse> =>
+    apiCall<TeamsResponse>('/teams', 'GET'),
 
-  getTeamDetails: <T = ApiResponse>(teamId: number): Promise<T> =>
-    apiCall<T>(`/teams/${teamId}`, 'GET'),
+  getTeamDetails: (teamId: number): Promise<TeamDetailsResponse> =>
+    apiCall<TeamDetailsResponse>(`/teams/${teamId}`, 'GET'),
 
-  inviteMember: <T = ApiResponse>(teamId: number, email: string, role: string): Promise<T> =>
-    apiCall<T>(`/teams/${teamId}/invite`, 'POST', { email, role }),
+  inviteMember: (teamId: number, email: string, role: string): Promise<{ message: string; member: { email: string; role: string; status: string } }> =>
+    apiCall<{ message: string; member: { email: string; role: string; status: string } }>(
+      `/teams/${teamId}/invite`,
+      'POST',
+      { email, role }
+    ),
 
-  updateMemberRole: <T = ApiResponse>(teamId: number, memberId: number, role: string): Promise<T> =>
-    apiCall<T>(`/teams/${teamId}/members/${memberId}`, 'PUT', { role }),
+  updateMemberRole: (teamId: number, memberId: number, role: string): Promise<{ message: string; role: string }> =>
+    apiCall<{ message: string; role: string }>(
+      `/teams/${teamId}/members/${memberId}`,
+      'PUT',
+      { role }
+    ),
 
-  removeMember: <T = ApiResponse>(teamId: number, memberId: number): Promise<T> =>
-    apiCall<T>(`/teams/${teamId}/members/${memberId}`, 'DELETE'),
+  removeMember: (teamId: number, memberId: number): Promise<{ message: string }> =>
+    apiCall<{ message: string }>(`/teams/${teamId}/members/${memberId}`, 'DELETE'),
 };
 
 // ============ TEAM TASK SERVICES ============
 export const teamTaskService = {
-  getTeamMembers: <T = { members: TeamMemberData[] }>(teamId: number): Promise<T> =>
-    apiCall<T>(`/teams/${teamId}/members`, 'GET'),
+  getTeamMembers: (teamId: number): Promise<{ members: TeamMemberData[]; user_role: string }> =>
+    apiCall<{ members: TeamMemberData[]; user_role: string }>(`/teams/${teamId}/members`, 'GET'),
 
-  createTeamTask: <T = ApiResponse>(teamId: number, taskData: TeamTaskData): Promise<T> =>
-    apiCall<T>(`/teams/${teamId}/tasks`, 'POST', taskData),
+  createTeamTask: (teamId: number, taskData: TeamTaskData): Promise<{ message: string; task: Task; assignee_name: string }> =>
+    apiCall<{ message: string; task: Task; assignee_name: string }>(
+      `/teams/${teamId}/tasks`,
+      'POST',
+      taskData
+    ),
 
   getTeamTasks: <T = ApiResponse>(teamId: number, filters: Record<string, string | number> = {}): Promise<T> => {
     const queryString = new URLSearchParams(filters as Record<string, string>).toString();
     return apiCall<T>(`/teams/${teamId}/tasks${queryString ? `?${queryString}` : ''}`, 'GET');
   },
 
-  updateTeamTask: <T = ApiResponse>(teamId: number, taskId: number, taskData: Partial<TeamTaskData>): Promise<T> =>
-    apiCall<T>(`/teams/${teamId}/tasks/${taskId}`, 'PUT', taskData),
+  updateTeamTask: (teamId: number, taskId: number, taskData: Partial<TeamTaskData>): Promise<{ message: string; task: Task }> =>
+    apiCall<{ message: string; task: Task }>(
+      `/teams/${teamId}/tasks/${taskId}`,
+      'PUT',
+      taskData
+    ),
 
-  deleteTeamTask: <T = ApiResponse>(teamId: number, taskId: number): Promise<T> =>
-    apiCall<T>(`/teams/${teamId}/tasks/${taskId}`, 'DELETE'),
+  deleteTeamTask: (teamId: number, taskId: number): Promise<{ message: string }> =>
+    apiCall<{ message: string }>(`/teams/${teamId}/tasks/${taskId}`, 'DELETE'),
 
-  getMyAssignedTasks: <T = ApiResponse>(filters: Record<string, string | number> = {}): Promise<T> => {
+  getMyAssignedTasks: (filters: Record<string, string | number> = {}): Promise<{ tasks: Task[]; total: number }> => {
     const queryString = new URLSearchParams(filters as Record<string, string>).toString();
-    return apiCall<T>(`/my-tasks${queryString ? `?${queryString}` : ''}`, 'GET');
+    return apiCall<{ tasks: Task[]; total: number }>(
+      `/my-tasks${queryString ? `?${queryString}` : ''}`,
+      'GET'
+    );
   },
 };
 
 // ============ NOTIFICATION SERVICES ============
 export const notificationService = {
-  getNotifications: <T = NotificationResponse>(params: Record<string, string | number> = {}): Promise<T> => {
+  getNotifications: (params: Record<string, string | number> = {}): Promise<NotificationResponse> => {
     const queryString = new URLSearchParams(params as Record<string, string>).toString();
-    return apiCall<T>(`/notifications${queryString ? `?${queryString}` : ''}`, 'GET');
+    return apiCall<NotificationResponse>(`/notifications${queryString ? `?${queryString}` : ''}`, 'GET');
   },
 
   getUnreadCount: (): Promise<UnreadCountResponse> =>
     apiCall<UnreadCountResponse>('/notifications/unread', 'GET'),
 
-  markAsRead: <T = { message: string }>(id: number): Promise<T> =>
-    apiCall<T>(`/notifications/${id}/read`, 'PUT'),
+  markAsRead: (id: number): Promise<{ message: string }> =>
+    apiCall<{ message: string }>(`/notifications/${id}/read`, 'PUT'),
 
-  markAllAsRead: <T = { message: string }>(): Promise<T> =>
-    apiCall<T>('/notifications/read-all', 'PUT'),
+  markAllAsRead: (): Promise<{ message: string }> =>
+    apiCall<{ message: string }>('/notifications/read-all', 'PUT'),
 
-  deleteNotification: <T = { message: string }>(id: number): Promise<T> =>
-    apiCall<T>(`/notifications/${id}`, 'DELETE'),
+  deleteNotification: (id: number): Promise<{ message: string }> =>
+    apiCall<{ message: string }>(`/notifications/${id}`, 'DELETE'),
+};
+
+// Update messageService to handle file uploads
+export const messageService = {
+  getChats: (): Promise<ChatsResponse> =>
+    apiCall<ChatsResponse>('/chats', 'GET'),
+
+  getTeamMessages: (teamId: number): Promise<MessagesResponse> =>
+    apiCall<MessagesResponse>(`/teams/${teamId}/messages`, 'GET'),
+
+  sendMessage: (teamId: number, data: FormData): Promise<{ message: string; data: Message }> => {
+    const token = getToken();
+    return fetch(`${API_URL}/teams/${teamId}/messages`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+      body: data,
+    }).then(async (response) => {
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to send message');
+      }
+      return response.json();
+    });
+  },
+
+  markMessagesAsRead: (teamId: number): Promise<{ message: string }> =>
+    apiCall<{ message: string }>(`/teams/${teamId}/messages/read`, 'PUT'),
+
+  getTeamUnreadCount: (teamId: number): Promise<{ unread_count: number }> =>
+    apiCall<{ unread_count: number }>(`/teams/${teamId}/messages/unread`, 'GET'),
 };
 
 // ============ EXPORT DEFAULT ============
@@ -273,4 +429,5 @@ export default {
   teamService,
   teamTaskService,
   notificationService,
+  messageService,
 };

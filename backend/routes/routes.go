@@ -36,6 +36,14 @@ func SetupRoutes(r *gin.Engine) {
 		api.PUT("/notifications/read-all", controllers.MarkAllNotificationsAsRead)
 		api.DELETE("/notifications/:id", controllers.DeleteNotification)
 
+		// ========== MESSAGE ROUTES ==========
+		api.GET("/chats", controllers.GetTeamChats)
+		api.GET("/teams/:id/messages", controllers.GetTeamMessages)
+		api.POST("/teams/:id/messages", controllers.SendMessage)
+		api.PUT("/teams/:id/messages/read", controllers.MarkMessagesAsRead)
+		api.GET("/teams/:id/messages/unread", controllers.GetTeamUnreadCount) // Renamed function
+		api.GET("/messages/:messageId/file", controllers.DownloadFile)
+
 		// Team routes
 		api.POST("/teams", controllers.CreateTeam)
 		api.GET("/teams", controllers.GetMyTeams)
@@ -51,12 +59,12 @@ func SetupRoutes(r *gin.Engine) {
 		api.PUT("/teams/:id/tasks/:taskId", controllers.UpdateTeamTask)
 		api.DELETE("/teams/:id/tasks/:taskId", controllers.DeleteTeamTask)
 
-		// My tasks (for members to see their assigned tasks)
+		// My tasks
 		api.GET("/my-tasks", controllers.GetMyAssignedTasks)
 
-		// ========== PERSONAL TASK ROUTES ==========
+		// Personal task routes
 		api.POST("/tasks", controllers.CreateTask)
-		api.GET("/tasks", controllers.GetTasks) // <-- This is the important one
+		api.GET("/tasks", controllers.GetTasks)
 		api.GET("/tasks/stats", controllers.GetTaskStats)
 		api.GET("/tasks/:id", controllers.GetTask)
 		api.PUT("/tasks/:id", controllers.UpdateTask)

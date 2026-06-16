@@ -119,11 +119,11 @@ type TeamTaskRequest struct {
 	AssignedTo  uint       `json:"assigned_to" binding:"required"`
 }
 
-// Add this after your existing models
+// ============ NOTIFICATION MODELS ============
 type Notification struct {
 	ID        uint           `gorm:"primaryKey" json:"id"`
 	UserID    uint           `gorm:"not null" json:"user_id"`
-	Type      string         `gorm:"not null" json:"type"` // task_assigned, task_updated, task_completed, task_mentioned, task_deleted
+	Type      string         `gorm:"not null" json:"type"`
 	Title     string         `gorm:"not null" json:"title"`
 	Message   string         `gorm:"not null" json:"message"`
 	Data      string         `gorm:"type:jsonb" json:"data"`
@@ -143,4 +143,46 @@ type TaskMention struct {
 	CreatedAt   time.Time `json:"created_at"`
 	Task        Task      `gorm:"foreignKey:TaskID" json:"task,omitempty"`
 	User        User      `gorm:"foreignKey:UserID" json:"user,omitempty"`
+}
+
+// ============ MESSAGE MODELS ============
+type Message struct {
+	ID          uint                `gorm:"primaryKey" json:"id"`
+	TeamID      uint                `gorm:"not null" json:"team_id"`
+	SenderID    uint                `gorm:"not null" json:"sender_id"`
+	Content     string              `json:"content"`
+	FileURL     string              `json:"file_url"`
+	FileName    string              `json:"file_name"`
+	FileType    string              `json:"file_type"`
+	FileSize    int64               `json:"file_size"`
+	IsRead      bool                `gorm:"default:false" json:"is_read"`
+	ReadAt      *time.Time          `json:"read_at"`
+	CreatedAt   time.Time           `json:"created_at"`
+	UpdatedAt   time.Time           `json:"updated_at"`
+	DeletedAt   gorm.DeletedAt      `gorm:"index" json:"-"`
+	Team        Team                `gorm:"foreignKey:TeamID" json:"team,omitempty"`
+	Sender      User                `gorm:"foreignKey:SenderID" json:"sender,omitempty"`
+	ReadBy      []MessageRead       `gorm:"foreignKey:MessageID" json:"read_by,omitempty"`
+	Attachments []MessageAttachment `gorm:"foreignKey:MessageID" json:"attachments,omitempty"`
+}
+
+// MessageRead - Tracks who has read which messages
+type MessageRead struct {
+	ID        uint      `gorm:"primaryKey" json:"id"`
+	MessageID uint      `gorm:"not null" json:"message_id"`
+	UserID    uint      `gorm:"not null" json:"user_id"`
+	ReadAt    time.Time `json:"read_at"`
+	Message   Message   `gorm:"foreignKey:MessageID" json:"-"`
+	User      User      `gorm:"foreignKey:UserID" json:"user,omitempty"`
+}
+
+type MessageAttachment struct {
+	ID        uint      `gorm:"primaryKey" json:"id"`
+	MessageID uint      `gorm:"not null" json:"message_id"`
+	FileURL   string    `gorm:"not null" json:"file_url"`
+	FileName  string    `gorm:"not null" json:"file_name"`
+	FileType  string    `gorm:"not null" json:"file_type"`
+	FileSize  int64     `gorm:"not null" json:"file_size"`
+	CreatedAt time.Time `json:"created_at"`
+	Message   Message   `gorm:"foreignKey:MessageID" json:"-"`
 }

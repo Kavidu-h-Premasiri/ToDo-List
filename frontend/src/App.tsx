@@ -8,6 +8,7 @@ import { CreateTaskPage } from './pages/CreateTask/page';
 import { EditTaskPage } from './pages/EditTask/page';
 import { ProfilePage } from './pages/Profile/page';
 import { TeamsPage } from './pages/Teams/page';
+import { MessagesPage } from './pages/Messages/page';
 
 // Protected Route wrapper component
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -20,7 +21,7 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
   return <>{children}</>;
 };
 
-// Public Route wrapper (redirects to dashboard if already logged in)
+// Public Route wrapper
 const PublicRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const token = localStorage.getItem('token');
   
@@ -105,13 +106,18 @@ function AppContent() {
           <ProfilePage />
         </ProtectedRoute>
       } />
+      <Route path="/messages" element={
+        <ProtectedRoute>
+          <MessagesPage />
+        </ProtectedRoute>
+      } />
       
       {/* Default Route */}
       <Route path="/" element={
         <Navigate to={isAuthenticated ? "/dashboard" : "/login"} replace />
       } />
       
-      {/* Catch all - redirect to home */}
+      {/* Catch all */}
       <Route path="*" element={
         <Navigate to="/" replace />
       } />

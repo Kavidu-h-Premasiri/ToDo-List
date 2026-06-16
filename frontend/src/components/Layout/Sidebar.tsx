@@ -6,7 +6,8 @@ import {
   Users, 
   User, 
   LogOut,
-  Sparkles
+  Sparkles,
+  MessageSquare 
 } from 'lucide-react';
 
 export const Sidebar: React.FC = () => {
@@ -30,6 +31,7 @@ export const Sidebar: React.FC = () => {
     { path: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
     { path: '/tasks', icon: CheckSquare, label: 'Tasks' },
     { path: '/teams', icon: Users, label: 'Teams' },
+    { path: '/messages', icon: MessageSquare, label: 'Messages' },
     { path: '/profile', icon: User, label: 'Profile' },
   ];
 
