@@ -54,9 +54,9 @@ func SetupRoutes(r *gin.Engine) {
 		// My tasks (for members to see their assigned tasks)
 		api.GET("/my-tasks", controllers.GetMyAssignedTasks)
 
-		// Personal task routes
+		// ========== PERSONAL TASK ROUTES ==========
 		api.POST("/tasks", controllers.CreateTask)
-		api.GET("/tasks", controllers.GetTasks)
+		api.GET("/tasks", controllers.GetTasks) // <-- This is the important one
 		api.GET("/tasks/stats", controllers.GetTaskStats)
 		api.GET("/tasks/:id", controllers.GetTask)
 		api.PUT("/tasks/:id", controllers.UpdateTask)

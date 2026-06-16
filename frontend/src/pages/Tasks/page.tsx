@@ -21,7 +21,7 @@ import {
   Eye,
   RefreshCw
 } from 'lucide-react';
-import { taskService } from '../../services/api.ts';
+import { taskService } from '../../services/api';
 import { Link } from 'react-router-dom';
 
 interface Task {
@@ -34,6 +34,9 @@ interface Task {
   created_at: string;
   updated_at: string;
   user_id: number;
+  assigned_to?: number;
+  team_id?: number;
+  assignee_name?: string;
 }
 
 interface TaskStats {
@@ -62,24 +65,35 @@ export const TasksPage: React.FC = () => {
   const [success, setSuccess] = useState('');
   const [deletingId, setDeletingId] = useState<number | null>(null);
 
+  const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
+
   useEffect(() => {
     fetchTasks();
     fetchStats();
   }, []);
 
   const fetchTasks = useCallback(async () => {
-    try {
-      setLoading(true);
-      setError('');
-      const response = await taskService.getTasks();
-      setTasks(response.tasks || []);
-    } catch (err: any) {
-      console.error('Error fetching tasks:', err);
-      setError(err.message || 'Failed to load tasks');
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  try {
+    setLoading(true);
+    setError('');
+    
+    // Get all tasks from API - backend already filters by user
+    const response = await taskService.getTasks();
+    console.log('Tasks response:', response);
+    
+    const allTasks = response.tasks || [];
+    console.log('All tasks:', allTasks);
+    
+    // Backend already filters, so just set the tasks
+    setTasks(allTasks);
+    
+  } catch (err: any) {
+    console.error('Error fetching tasks:', err);
+    setError(err.message || 'Failed to load tasks');
+  } finally {
+    setLoading(false);
+  }
+}, []);
 
   const fetchStats = async () => {
     try {
@@ -241,6 +255,16 @@ export const TasksPage: React.FC = () => {
     { label: 'Completed', value: 'completed' },
   ];
 
+  // Check if user can edit/delete task
+  const canManageTask = (task: Task) => {
+    return task.user_id === currentUser.id;
+  };
+
+  // Check if task is assigned to current user
+  const isAssignedToMe = (task: Task) => {
+    return task.assigned_to === currentUser.id;
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50">
@@ -268,7 +292,7 @@ export const TasksPage: React.FC = () => {
           {/* Header */}
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
             <div>
-              <h1 className="text-2xl sm:text-3xl font-bold text-gray-800">Tasks</h1>
+              <h1 className="text-2xl sm:text-3xl font-bold text-gray-800">My Tasks</h1>
               <p className="text-gray-500 mt-1">Manage and track all your tasks</p>
             </div>
             <Link to="/tasks/create">
@@ -454,7 +478,7 @@ export const TasksPage: React.FC = () => {
               <p className="text-gray-500 mb-4">
                 {searchTerm || filterStatus !== 'all' || filterPriority !== 'all'
                   ? 'No tasks match your search criteria'
-                  : 'No tasks created yet. Create your first task!'}
+                  : 'No tasks assigned to you yet. Create your first task!'}
               </p>
               {(searchTerm || filterStatus !== 'all' || filterPriority !== 'all') ? (
                 <Button variant="secondary" onClick={() => {
@@ -477,6 +501,9 @@ export const TasksPage: React.FC = () => {
             <div className="grid grid-cols-1 gap-4">
               {filteredTasks.map((task) => {
                 const dueStatus = getDueDateStatus(task.due_date);
+                const canManage = canManageTask(task);
+                const assignedToMe = isAssignedToMe(task);
+                
                 return (
                   <Card key={task.id} className="p-6 hover:shadow-lg transition-all duration-300 group">
                     <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-4">
@@ -513,33 +540,47 @@ export const TasksPage: React.FC = () => {
                               <span className="text-xs px-2.5 py-1 rounded-full bg-gray-100 text-gray-500 border border-gray-200">
                                 Created: {new Date(task.created_at).toLocaleDateString()}
                               </span>
+                              {assignedToMe && !canManage && (
+                                <span className="text-xs px-2.5 py-1 rounded-full bg-purple-100 text-purple-700 border border-purple-200">
+                                  Assigned to me
+                                </span>
+                              )}
+                              {task.assignee_name && canManage && (
+                                <span className="text-xs px-2.5 py-1 rounded-full bg-blue-100 text-blue-700 border border-blue-200">
+                                  Assigned to: {task.assignee_name}
+                                </span>
+                              )}
                             </div>
                           </div>
                         </div>
                       </div>
 
                       <div className="flex flex-wrap items-center gap-2 lg:gap-3">
-                        {/* Status Update */}
-                        <select
-                          value={task.status}
-                          onChange={(e) => handleStatusChange(task.id, e.target.value)}
-                          className="text-sm px-2.5 py-1.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 bg-white"
-                        >
-                          <option value="pending">Pending</option>
-                          <option value="in_progress">In Progress</option>
-                          <option value="completed">Completed</option>
-                        </select>
+                        {/* Status Update - Everyone can change status of their tasks */}
+                        {(canManage || assignedToMe) && (
+                          <select
+                            value={task.status}
+                            onChange={(e) => handleStatusChange(task.id, e.target.value)}
+                            className="text-sm px-2.5 py-1.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 bg-white"
+                          >
+                            <option value="pending">Pending</option>
+                            <option value="in_progress">In Progress</option>
+                            <option value="completed">Completed</option>
+                          </select>
+                        )}
 
-                        {/* Priority Update */}
-                        <select
-                          value={task.priority}
-                          onChange={(e) => handlePriorityChange(task.id, e.target.value)}
-                          className="text-sm px-2.5 py-1.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 bg-white"
-                        >
-                          <option value="low">Low</option>
-                          <option value="medium">Medium</option>
-                          <option value="high">High</option>
-                        </select>
+                        {/* Priority Update - Only if user created the task */}
+                        {canManage && (
+                          <select
+                            value={task.priority}
+                            onChange={(e) => handlePriorityChange(task.id, e.target.value)}
+                            className="text-sm px-2.5 py-1.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 bg-white"
+                          >
+                            <option value="low">Low</option>
+                            <option value="medium">Medium</option>
+                            <option value="high">High</option>
+                          </select>
+                        )}
 
                         <div className="flex gap-1">
                           <button
@@ -549,23 +590,27 @@ export const TasksPage: React.FC = () => {
                           >
                             <Eye className="w-4 h-4 text-blue-500" />
                           </button>
-                          <Link to={`/tasks/${task.id}/edit`}>
-                            <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors" title="Edit">
-                              <Edit className="w-4 h-4 text-gray-600" />
-                            </button>
-                          </Link>
-                          <button
-                            onClick={() => handleDeleteTask(task.id)}
-                            disabled={deletingId === task.id}
-                            className="p-2 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50"
-                            title="Delete"
-                          >
-                            {deletingId === task.id ? (
-                              <div className="w-4 h-4 border-2 border-red-500 border-t-transparent rounded-full animate-spin"></div>
-                            ) : (
-                              <Trash2 className="w-4 h-4 text-red-500" />
-                            )}
-                          </button>
+                          {canManage && (
+                            <>
+                              <Link to={`/tasks/${task.id}/edit`}>
+                                <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors" title="Edit">
+                                  <Edit className="w-4 h-4 text-gray-600" />
+                                </button>
+                              </Link>
+                              <button
+                                onClick={() => handleDeleteTask(task.id)}
+                                disabled={deletingId === task.id}
+                                className="p-2 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50"
+                                title="Delete"
+                              >
+                                {deletingId === task.id ? (
+                                  <div className="w-4 h-4 border-2 border-red-500 border-t-transparent rounded-full animate-spin"></div>
+                                ) : (
+                                  <Trash2 className="w-4 h-4 text-red-500" />
+                                )}
+                              </button>
+                            </>
+                          )}
                         </div>
                       </div>
                     </div>
