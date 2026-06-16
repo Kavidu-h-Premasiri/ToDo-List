@@ -84,12 +84,16 @@ interface UnreadCountResponse {
   unread_count: number;
 }
 
-// Message Types
-interface Message {
+// ============ MESSAGE TYPES ============
+interface ChatMessage {
   id: number;
   team_id: number;
   sender_id: number;
   content: string;
+  file_url: string;
+  file_name: string;
+  file_type: string;
+  file_size: number;
   is_read: boolean;
   created_at: string;
   sender?: {
@@ -113,7 +117,7 @@ interface ChatsResponse {
 }
 
 interface MessagesResponse {
-  messages: Message[];
+  messages: ChatMessage[];
   total: number;
   page: number;
   limit: number;
@@ -390,7 +394,7 @@ export const notificationService = {
     apiCall<{ message: string }>(`/notifications/${id}`, 'DELETE'),
 };
 
-// Update messageService to handle file uploads
+// ============ MESSAGE SERVICES ============
 export const messageService = {
   getChats: (): Promise<ChatsResponse> =>
     apiCall<ChatsResponse>('/chats', 'GET'),
@@ -398,7 +402,7 @@ export const messageService = {
   getTeamMessages: (teamId: number): Promise<MessagesResponse> =>
     apiCall<MessagesResponse>(`/teams/${teamId}/messages`, 'GET'),
 
-  sendMessage: (teamId: number, data: FormData): Promise<{ message: string; data: Message }> => {
+  sendMessage: (teamId: number, data: FormData): Promise<{ message: string; data: ChatMessage }> => {
     const token = getToken();
     return fetch(`${API_URL}/teams/${teamId}/messages`, {
       method: 'POST',

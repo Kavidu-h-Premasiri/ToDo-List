@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
-import { Menu, ChevronDown } from 'lucide-react';
+import { Menu, User as UserIcon, LogOut } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { NotificationBell } from '../Notifications/NotificationBell';
 
 export const Navbar: React.FC = () => {
   const [showDropdown, setShowDropdown] = useState(false);
+  const [photoError, setPhotoError] = useState(false);
   const navigate = useNavigate();
   const user = JSON.parse(localStorage.getItem('user') || '{}');
 
@@ -28,10 +29,15 @@ export const Navbar: React.FC = () => {
     navigate('/profile');
   };
 
+  const handlePhotoError = () => {
+    setPhotoError(true);
+  };
+
+  const profilePhoto = user.profile_photo ? `http://localhost:8080/${user.profile_photo}` : null;
+
   return (
     <nav className="bg-white border-b border-gray-200 px-4 sm:px-6 py-4 sticky top-0 z-30">
       <div className="flex justify-between items-center">
-        {/* Mobile menu button */}
         <button
           onClick={toggleMobileSidebar}
           className="lg:hidden p-2 rounded-lg hover:bg-gray-100 transition-colors"
@@ -39,7 +45,6 @@ export const Navbar: React.FC = () => {
           <Menu className="w-6 h-6 text-gray-600" />
         </button>
 
-        {/* Page Title */}
         <div className="flex-1 lg:flex-none">
           <h2 className="text-xl sm:text-2xl font-semibold text-gray-800">
             Welcome back, <span className="bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
@@ -49,23 +54,28 @@ export const Navbar: React.FC = () => {
           <p className="text-sm text-gray-500 mt-1 hidden sm:block">Here's what's happening with your tasks today.</p>
         </div>
 
-        {/* Right Side Actions */}
         <div className="flex items-center gap-3">
-          {/* Notification Bell */}
           <NotificationBell />
 
-          {/* User Dropdown */}
           <div className="relative">
             <button
               onClick={() => setShowDropdown(!showDropdown)}
               className="flex items-center gap-2 p-2 rounded-xl hover:bg-gray-100 transition-colors"
             >
-              <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-xl flex items-center justify-center text-white font-semibold text-sm sm:text-base shadow-md">
-                {user.name?.charAt(0) || 'U'}
+              <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-xl flex items-center justify-center text-white font-semibold text-sm sm:text-base shadow-md overflow-hidden">
+                {profilePhoto && !photoError ? (
+                  <img 
+                    src={profilePhoto} 
+                    alt={user.name} 
+                    className="w-full h-full object-cover"
+                    onError={handlePhotoError}
+                  />
+                ) : (
+                  user.name?.charAt(0) || 'U'
+                )}
               </div>
             </button>
 
-            {/* Dropdown Menu */}
             {showDropdown && (
               <>
                 <div
@@ -82,12 +92,14 @@ export const Navbar: React.FC = () => {
                       onClick={goToProfile}
                       className="w-full flex items-center gap-3 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
                     >
+                      <UserIcon className="w-4 h-4" />
                       Profile Settings
                     </button>
                     <button 
                       onClick={handleLogout}
                       className="w-full flex items-center gap-3 px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-colors mt-1"
                     >
+                      <LogOut className="w-4 h-4" />
                       Sign Out
                     </button>
                   </div>

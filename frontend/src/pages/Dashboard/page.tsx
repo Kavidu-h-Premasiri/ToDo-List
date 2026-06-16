@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { Sidebar } from '../../components/Layout/Sidebar';
 import { Navbar } from '../../components/Layout/Navbar';
 import { Card } from '../../components/UI/Card';
@@ -11,11 +11,41 @@ import {
   Plus,
   ArrowRight 
 } from 'lucide-react';
-import { taskService } from '../../services/api.ts';
-import { Link } from 'react-router-dom';
+import { taskService } from '../../services/api';
+import { Link, useNavigate } from 'react-router-dom';
+
+interface Task {
+  id: number;
+  title: string;
+  description: string;
+  status: string;
+  priority: string;
+  due_date: string | null;
+  created_at: string;
+  updated_at: string;
+  user_id: number;
+  assigned_to?: number;
+  team_id?: number;
+  assignee_name?: string;
+}
+
+interface Stats {
+  total: number;
+  completed: number;
+  in_progress: number;
+  pending: number;
+  high_priority: number;
+  medium_priority: number;
+  low_priority: number;
+}
+
+interface ApiError {
+  message: string;
+}
 
 export const DashboardPage: React.FC = () => {
-  const [stats, setStats] = useState({
+  const navigate = useNavigate();
+  const [stats, setStats] = useState<Stats>({
     total: 0,
     completed: 0,
     in_progress: 0,
@@ -24,15 +54,11 @@ export const DashboardPage: React.FC = () => {
     medium_priority: 0,
     low_priority: 0
   });
-  const [recentTasks, setRecentTasks] = useState<any[]>([]);
+  const [recentTasks, setRecentTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  useEffect(() => {
-    fetchDashboardData();
-  }, []);
-
-  const fetchDashboardData = async () => {
+  const fetchDashboardData = useCallback(async () => {
     try {
       setLoading(true);
       setError('');
@@ -55,12 +81,34 @@ export const DashboardPage: React.FC = () => {
       });
       
       setRecentTasks(tasksData.tasks || []);
-    } catch (err: any) {
-      console.error('Error fetching dashboard data:', err);
-      setError(err.message || 'Failed to load dashboard data');
+    } catch (err) {
+      const apiError = err as ApiError;
+      console.error('Error fetching dashboard data:', apiError);
+      setError(apiError.message || 'Failed to load dashboard data');
     } finally {
       setLoading(false);
     }
+  }, []);
+
+  // Use a mounted flag to prevent state updates after unmount
+  useEffect(() => {
+    let isMounted = true;
+    
+    const loadData = async () => {
+      if (isMounted) {
+        await fetchDashboardData();
+      }
+    };
+    
+    loadData();
+    
+    return () => {
+      isMounted = false;
+    };
+  }, [fetchDashboardData]);
+
+  const handleViewDetails = (taskId: number) => {
+    navigate(`/tasks/${taskId}`);
   };
 
   const statsCards = [
@@ -212,7 +260,7 @@ export const DashboardPage: React.FC = () => {
                   </Link>
                 </div>
               ) : (
-                recentTasks.map((task, index) => (
+                recentTasks.map((task) => (
                   <div 
                     key={task.id} 
                     className="p-4 border border-gray-100 rounded-xl hover:shadow-md transition-all duration-300 hover:border-gray-200"
@@ -237,12 +285,14 @@ export const DashboardPage: React.FC = () => {
                           )}
                         </div>
                       </div>
-                      <Link to={`/tasks/${task.id}`}>
-                        <Button variant="ghost" size="sm">
-                          View Details
-                          <ArrowRight className="w-4 h-4 ml-1" />
-                        </Button>
-                      </Link>
+                      <Button 
+                        variant="ghost" 
+                        size="sm"
+                        onClick={() => handleViewDetails(task.id)}
+                      >
+                        View Details
+                        <ArrowRight className="w-4 h-4 ml-1" />
+                      </Button>
                     </div>
                   </div>
                 ))

@@ -7,6 +7,7 @@ import { TasksPage } from './pages/Tasks/page';
 import { CreateTaskPage } from './pages/CreateTask/page';
 import { EditTaskPage } from './pages/EditTask/page';
 import { ProfilePage } from './pages/Profile/page';
+import { TaskDetailsPage } from './pages/TaskDetails/page';
 import { TeamsPage } from './pages/Teams/page';
 import { MessagesPage } from './pages/Messages/page';
 
@@ -37,11 +38,17 @@ function AppContent() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    setIsAuthenticated(!!token);
-    setLoading(false);
+    // Check authentication status
+    const checkAuth = (): void => {
+      const token = localStorage.getItem('token');
+      setIsAuthenticated(!!token);
+      setLoading(false);
+    };
 
-    const handleStorageChange = () => {
+    checkAuth();
+
+    // Listen for storage changes (in case token is updated in another tab)
+    const handleStorageChange = (): void => {
       const newToken = localStorage.getItem('token');
       setIsAuthenticated(!!newToken);
     };
@@ -121,7 +128,15 @@ function AppContent() {
       <Route path="*" element={
         <Navigate to="/" replace />
       } />
+
+      <Route path="/tasks/:id" element={
+        <ProtectedRoute>
+          <TaskDetailsPage />
+        </ProtectedRoute>
+      } />
     </Routes>
+
+    
   );
 }
 

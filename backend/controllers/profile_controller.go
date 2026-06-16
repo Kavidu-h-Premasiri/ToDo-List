@@ -100,6 +100,20 @@ func GetProfilePhoto(c *gin.Context) {
 		return
 	}
 
+	// Check if file exists
+	photoExists := false
+	if user.ProfilePhoto != "" {
+		if _, err := os.Stat(user.ProfilePhoto); err == nil {
+			photoExists = true
+		}
+	}
+
+	// If file doesn't exist, clear the database entry
+	if !photoExists && user.ProfilePhoto != "" {
+		user.ProfilePhoto = ""
+		database.DB.Save(&user)
+	}
+
 	c.JSON(http.StatusOK, gin.H{
 		"profile_photo": user.ProfilePhoto,
 	})

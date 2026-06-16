@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Sidebar } from '../../components/Layout/Sidebar';
 import { Navbar } from '../../components/Layout/Navbar';
 import { Card } from '../../components/UI/Card';
@@ -6,10 +6,7 @@ import { Button } from '../../components/UI/Button';
 import { 
   Send, 
   Users, 
-  Clock, 
   Check, 
-  CheckCheck,
-  ChevronRight,
   MessageSquare,
   AlertCircle,
   Paperclip,
@@ -18,8 +15,9 @@ import {
   X,
   Download
 } from 'lucide-react';
-import { messageService, teamService } from '../../services/api';
+import { messageService } from '../../services/api';
 
+// Use the same interface as api.ts
 interface Chat {
   team_id: number;
   team_name: string;
@@ -29,7 +27,7 @@ interface Chat {
   unread_count: number;
 }
 
-interface Message {
+interface ChatMessage {
   id: number;
   content: string;
   sender_id: number;
@@ -37,7 +35,7 @@ interface Message {
   file_name: string;
   file_type: string;
   file_size: number;
-  sender: {
+  sender?: {
     id: number;
     name: string;
     email: string;
@@ -48,7 +46,7 @@ interface Message {
 export const MessagesPage: React.FC = () => {
   const [chats, setChats] = useState<Chat[]>([]);
   const [selectedTeamId, setSelectedTeamId] = useState<number | null>(null);
-  const [messages, setMessages] = useState<Message[]>([]);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [filePreview, setFilePreview] = useState<string | null>(null);
@@ -60,33 +58,13 @@ export const MessagesPage: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
 
-  useEffect(() => {
-    fetchChats();
-    const interval = setInterval(() => {
-      if (selectedTeamId) {
-        fetchMessages(selectedTeamId);
-      }
-      fetchChats();
-    }, 5000);
-    return () => clearInterval(interval);
-  }, []);
-
-  useEffect(() => {
-    if (selectedTeamId) {
-      fetchMessages(selectedTeamId);
-      markMessagesAsRead(selectedTeamId);
-    }
-  }, [selectedTeamId]);
-
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
-
-  const scrollToBottom = () => {
+  // Scroll to bottom function
+  const scrollToBottom = (): void => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
-  const fetchChats = async () => {
+  // Fetch chats
+  const fetchChats = async (): Promise<void> => {
     try {
       const response = await messageService.getChats();
       setChats(response.chats || []);
@@ -97,37 +75,72 @@ export const MessagesPage: React.FC = () => {
     }
   };
 
-  const fetchMessages = async (teamId: number) => {
+  // Fetch messages for a team
+  const fetchMessages = async (teamId: number): Promise<void> => {
     try {
       const response = await messageService.getTeamMessages(teamId);
-      setMessages(response.messages || []);
+      const messagesData: ChatMessage[] = response.messages || [];
+      setMessages(messagesData);
     } catch (err) {
       console.error('Error fetching messages:', err);
     }
   };
 
-  const markMessagesAsRead = async (teamId: number) => {
+  // Mark messages as read
+  const markMessagesAsRead = async (teamId: number): Promise<void> => {
     try {
       await messageService.markMessagesAsRead(teamId);
-      setChats(chats.map(chat => 
-        chat.team_id === teamId ? { ...chat, unread_count: 0 } : chat
-      ));
+      setChats(prevChats => 
+        prevChats.map(chat => 
+          chat.team_id === teamId ? { ...chat, unread_count: 0 } : chat
+        )
+      );
     } catch (err) {
       console.error('Error marking messages as read:', err);
     }
   };
 
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // Initial load
+  useEffect(() => {
+    const loadData = async (): Promise<void> => {
+      await fetchChats();
+    };
+    loadData();
+    
+    const interval = setInterval(() => {
+      if (selectedTeamId) {
+        fetchMessages(selectedTeamId);
+      }
+      fetchChats();
+    }, 5000);
+    return () => clearInterval(interval);
+  }, [selectedTeamId]);
+
+  // Load messages when team is selected
+  useEffect(() => {
+    const loadMessages = async (): Promise<void> => {
+      if (selectedTeamId) {
+        await fetchMessages(selectedTeamId);
+        await markMessagesAsRead(selectedTeamId);
+      }
+    };
+    loadMessages();
+  }, [selectedTeamId]);
+
+  // Scroll to bottom on new messages
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>): void => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Validate file size (10MB max)
     if (file.size > 10 * 1024 * 1024) {
       setError('File too large. Maximum size is 10MB');
       return;
     }
 
-    // Validate file type
     const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 
                          'application/pdf', 'application/msword', 
                          'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
@@ -140,7 +153,6 @@ export const MessagesPage: React.FC = () => {
 
     setSelectedFile(file);
     
-    // Create preview for images
     if (file.type.startsWith('image/')) {
       const reader = new FileReader();
       reader.onload = (event) => {
@@ -153,7 +165,7 @@ export const MessagesPage: React.FC = () => {
     setError('');
   };
 
-  const removeFile = () => {
+  const removeFile = (): void => {
     setSelectedFile(null);
     setFilePreview(null);
     if (fileInputRef.current) {
@@ -161,7 +173,7 @@ export const MessagesPage: React.FC = () => {
     }
   };
 
-  const handleSendMessage = async (e: React.FormEvent) => {
+  const handleSendMessage = async (e: React.FormEvent): Promise<void> => {
     e.preventDefault();
     if ((!newMessage.trim() && !selectedFile) || !selectedTeamId) return;
 
@@ -181,14 +193,15 @@ export const MessagesPage: React.FC = () => {
       await fetchMessages(selectedTeamId);
       await fetchChats();
       inputRef.current?.focus();
-    } catch (err: any) {
-      setError(err.message || 'Failed to send message');
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to send message';
+      setError(errorMessage);
     } finally {
       setSending(false);
     }
   };
 
-  const formatTime = (dateString: string) => {
+  const formatTime = (dateString: string): string => {
     const date = new Date(dateString);
     const now = new Date();
     const diff = now.getTime() - date.getTime();
@@ -203,13 +216,13 @@ export const MessagesPage: React.FC = () => {
     }
   };
 
-  const formatFileSize = (bytes: number) => {
+  const formatFileSize = (bytes: number): string => {
     if (bytes < 1024) return bytes + ' B';
     if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
     return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
   };
 
-  const getFileIcon = (fileType: string) => {
+  const getFileIcon = (fileType: string): React.ReactElement => {
     if (fileType.startsWith('image/')) return <Image className="w-5 h-5 text-blue-500" />;
     if (fileType === 'application/pdf') return <File className="w-5 h-5 text-red-500" />;
     if (fileType.includes('word')) return <File className="w-5 h-5 text-blue-600" />;
@@ -219,7 +232,7 @@ export const MessagesPage: React.FC = () => {
     return <File className="w-5 h-5 text-gray-500" />;
   };
 
-  const isMessageFromCurrentUser = (message: Message) => {
+  const isMessageFromCurrentUser = (message: ChatMessage): boolean => {
     return message.sender_id === currentUser.id;
   };
 
@@ -363,7 +376,7 @@ export const MessagesPage: React.FC = () => {
                                   ? 'bg-blue-500 text-white'
                                   : 'bg-white border border-gray-200 text-gray-800'
                               }`}>
-                                {!isMine && (
+                                {!isMine && message.sender && (
                                   <p className="text-xs font-semibold text-blue-600 mb-1">
                                     {message.sender.name}
                                   </p>
@@ -421,7 +434,7 @@ export const MessagesPage: React.FC = () => {
                                 )}
                               </div>
                             </div>
-                            {!isMine && (
+                            {!isMine && message.sender && (
                               <div className="flex-shrink-0 w-8 h-8 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full flex items-center justify-center text-white font-semibold text-xs order-0 mr-2">
                                 {message.sender.name.charAt(0).toUpperCase()}
                               </div>

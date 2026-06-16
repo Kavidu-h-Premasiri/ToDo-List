@@ -1,7 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Mail, Lock, LogIn, ChevronRight, Sparkles, AlertCircle, Eye, EyeOff } from 'lucide-react';
-import { authService } from '../../services/api.ts';
+import { authService } from '../../services/api';
+
+interface ApiError {
+  message: string;
+}
 
 export const LoginPage: React.FC = () => {
   const navigate = useNavigate();
@@ -13,7 +17,6 @@ export const LoginPage: React.FC = () => {
 
   // Clear any existing session when on login page
   useEffect(() => {
-    // Clear any stale data to ensure clean login
     localStorage.removeItem('token');
     localStorage.removeItem('user');
   }, []);
@@ -21,7 +24,6 @@ export const LoginPage: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Validate inputs
     if (!email.trim()) {
       setError('Please enter your email address');
       return;
@@ -41,20 +43,23 @@ export const LoginPage: React.FC = () => {
       console.log('Login response:', response);
       
       if (response && response.token) {
-        // Store token and user data
         localStorage.setItem('token', response.token);
         localStorage.setItem('user', JSON.stringify(response.user));
         
         console.log('Login successful, redirecting to dashboard...');
-        
-        // Navigate to dashboard
         navigate('/dashboard');
       } else {
         throw new Error('No token received from server');
       }
-    } catch (err: any) {
-      console.error('Login error:', err);
-      setError(err.message || 'Login failed. Please check your credentials and try again.');
+    } catch (err) {
+      const apiError = err as ApiError;
+      console.error('Login error:', apiError);
+      // Check if it's an invalid credentials error
+      if (apiError.message?.toLowerCase().includes('invalid credentials')) {
+        setError('Invalid email or password. Please try again.');
+      } else {
+        setError(apiError.message || 'Login failed. Please check your credentials and try again.');
+      }
     } finally {
       setIsLoading(false);
     }

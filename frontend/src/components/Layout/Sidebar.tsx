@@ -7,25 +7,61 @@ import {
   User, 
   LogOut,
   Sparkles,
-  MessageSquare 
+  MessageSquare
 } from 'lucide-react';
+
+interface UserData {
+  name: string;
+  email: string;
+  profile_photo?: string;
+}
 
 export const Sidebar: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const [user, setUser] = useState<any>({});
+  const [user, setUser] = useState<UserData>({ name: '', email: '' });
   const [profilePhoto, setProfilePhoto] = useState<string | null>(null);
+  const [photoError, setPhotoError] = useState(false);
 
   useEffect(() => {
+    const loadUserData = (): void => {
+      const userData = localStorage.getItem('user');
+      if (userData) {
+        try {
+          const parsedUser = JSON.parse(userData);
+          setUser(parsedUser);
+          // Only set profile photo if it exists and is not empty
+          if (parsedUser.profile_photo && parsedUser.profile_photo !== '') {
+            setProfilePhoto(`http://localhost:8080/${parsedUser.profile_photo}`);
+          } else {
+            setProfilePhoto(null);
+          }
+        } catch (error) {
+          console.error('Error parsing user data:', error);
+        }
+      }
+    };
+
+    loadUserData();
+  }, []);
+
+  const handlePhotoError = (): void => {
+    setPhotoError(true);
+    setProfilePhoto(null);
+    // Clear the broken photo from localStorage
     const userData = localStorage.getItem('user');
     if (userData) {
-      const parsedUser = JSON.parse(userData);
-      setUser(parsedUser);
-      if (parsedUser.profile_photo) {
-        setProfilePhoto(`http://localhost:8080/${parsedUser.profile_photo}`);
+      try {
+        const parsedUser = JSON.parse(userData);
+        if (parsedUser.profile_photo) {
+          parsedUser.profile_photo = '';
+          localStorage.setItem('user', JSON.stringify(parsedUser));
+        }
+      } catch (error) {
+        console.error('Error updating user data:', error);
       }
     }
-  }, []);
+  };
 
   const menuItems = [
     { path: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
@@ -35,7 +71,7 @@ export const Sidebar: React.FC = () => {
     { path: '/profile', icon: User, label: 'Profile' },
   ];
 
-  const handleLogout = () => {
+  const handleLogout = (): void => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     navigate('/login');
@@ -62,21 +98,26 @@ export const Sidebar: React.FC = () => {
 
         <div className="p-4 border-b border-gray-100">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl overflow-hidden bg-gradient-to-r from-blue-500 to-indigo-500 flex items-center justify-center text-white font-semibold text-lg">
-              {profilePhoto ? (
-                <img src={profilePhoto} alt={user.name} className="w-full h-full object-cover" />
+            <div className="w-10 h-10 rounded-xl overflow-hidden bg-gradient-to-r from-blue-500 to-indigo-500 flex items-center justify-center text-white font-semibold text-lg flex-shrink-0">
+              {profilePhoto && !photoError ? (
+                <img 
+                  src={profilePhoto} 
+                  alt={user.name} 
+                  className="w-full h-full object-cover"
+                  onError={handlePhotoError}
+                />
               ) : (
                 user.name?.charAt(0) || 'U'
               )}
             </div>
-            <div>
-              <p className="font-semibold text-gray-800">{user.name || 'User'}</p>
-              <p className="text-xs text-gray-500">{user.email || 'user@example.com'}</p>
+            <div className="min-w-0 flex-1">
+              <p className="font-semibold text-gray-800 truncate">{user.name || 'User'}</p>
+              <p className="text-xs text-gray-500 truncate">{user.email || 'user@example.com'}</p>
             </div>
           </div>
         </div>
 
-        <nav className="flex-1 p-4 space-y-1">
+        <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
           {menuItems.map((item) => {
             const Icon = item.icon;
             const isActive = location.pathname === item.path;
