@@ -16,7 +16,6 @@ import {
   X,
   ChevronDown,
   ChevronUp,
-  User,
   Tag,
   Eye,
   RefreshCw
@@ -49,6 +48,10 @@ interface TaskStats {
   low_priority: number;
 }
 
+interface ApiError {
+  message: string;
+}
+
 export const TasksPage: React.FC = () => {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [stats, setStats] = useState<TaskStats | null>(null);
@@ -72,39 +75,38 @@ export const TasksPage: React.FC = () => {
     fetchStats();
   }, []);
 
-  const fetchTasks = useCallback(async () => {
-  try {
-    setLoading(true);
-    setError('');
-    
-    // Get all tasks from API - backend already filters by user
-    const response = await taskService.getTasks();
-    console.log('Tasks response:', response);
-    
-    const allTasks = response.tasks || [];
-    console.log('All tasks:', allTasks);
-    
-    // Backend already filters, so just set the tasks
-    setTasks(allTasks);
-    
-  } catch (err: any) {
-    console.error('Error fetching tasks:', err);
-    setError(err.message || 'Failed to load tasks');
-  } finally {
-    setLoading(false);
-  }
-}, []);
+  const fetchTasks = useCallback(async (): Promise<void> => {
+    try {
+      setLoading(true);
+      setError('');
+      
+      const response = await taskService.getTasks();
+      console.log('Tasks response:', response);
+      
+      const allTasks = response.tasks || [];
+      console.log('All tasks:', allTasks);
+      
+      setTasks(allTasks);
+    } catch (err) {
+      const apiError = err as ApiError;
+      console.error('Error fetching tasks:', apiError);
+      setError(apiError.message || 'Failed to load tasks');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
-  const fetchStats = async () => {
+  const fetchStats = async (): Promise<void> => {
     try {
       const response = await taskService.getStats();
       setStats(response);
     } catch (err) {
-      console.error('Error fetching stats:', err);
+      const apiError = err as ApiError;
+      console.error('Error fetching stats:', apiError);
     }
   };
 
-  const handleDeleteTask = async (id: number) => {
+  const handleDeleteTask = async (id: number): Promise<void> => {
     if (window.confirm('Are you sure you want to delete this task?')) {
       setDeletingId(id);
       try {
@@ -113,8 +115,9 @@ export const TasksPage: React.FC = () => {
         setTimeout(() => setSuccess(''), 3000);
         await fetchTasks();
         await fetchStats();
-      } catch (err: any) {
-        setError(err.message || 'Failed to delete task');
+      } catch (err) {
+        const apiError = err as ApiError;
+        setError(apiError.message || 'Failed to delete task');
         setTimeout(() => setError(''), 3000);
       } finally {
         setDeletingId(null);
@@ -122,37 +125,39 @@ export const TasksPage: React.FC = () => {
     }
   };
 
-  const handleStatusChange = async (taskId: number, newStatus: string) => {
+  const handleStatusChange = async (taskId: number, newStatus: string): Promise<void> => {
     try {
       await taskService.updateTask(taskId, { status: newStatus });
       setSuccess('Task status updated!');
       setTimeout(() => setSuccess(''), 2000);
       await fetchTasks();
       await fetchStats();
-    } catch (err: any) {
-      setError(err.message || 'Failed to update task');
+    } catch (err) {
+      const apiError = err as ApiError;
+      setError(apiError.message || 'Failed to update task');
       setTimeout(() => setError(''), 3000);
     }
   };
 
-  const handlePriorityChange = async (taskId: number, newPriority: string) => {
+  const handlePriorityChange = async (taskId: number, newPriority: string): Promise<void> => {
     try {
       await taskService.updateTask(taskId, { priority: newPriority });
       setSuccess('Task priority updated!');
       setTimeout(() => setSuccess(''), 2000);
       await fetchTasks();
-    } catch (err: any) {
-      setError(err.message || 'Failed to update priority');
+    } catch (err) {
+      const apiError = err as ApiError;
+      setError(apiError.message || 'Failed to update priority');
       setTimeout(() => setError(''), 3000);
     }
   };
 
-  const handleViewTask = (task: Task) => {
+  const handleViewTask = (task: Task): void => {
     setSelectedTask(task);
     setShowTaskModal(true);
   };
 
-  const getStatusColor = (status: string) => {
+  const getStatusColor = (status: string): string => {
     switch (status) {
       case 'completed': return 'bg-green-100 text-green-700 border-green-200';
       case 'in_progress': return 'bg-yellow-100 text-yellow-700 border-yellow-200';
@@ -160,7 +165,7 @@ export const TasksPage: React.FC = () => {
     }
   };
 
-  const getPriorityColor = (priority: string) => {
+  const getPriorityColor = (priority: string): string => {
     switch (priority) {
       case 'high': return 'bg-red-100 text-red-700 border-red-200';
       case 'medium': return 'bg-yellow-100 text-yellow-700 border-yellow-200';
@@ -168,7 +173,7 @@ export const TasksPage: React.FC = () => {
     }
   };
 
-  const getStatusIcon = (status: string) => {
+  const getStatusIcon = (status: string): React.ReactNode => {
     switch (status) {
       case 'completed': return <CheckCircle className="w-4 h-4" />;
       case 'in_progress': return <Clock className="w-4 h-4" />;
@@ -176,7 +181,7 @@ export const TasksPage: React.FC = () => {
     }
   };
 
-  const getDaysUntilDue = (dueDate: string | null) => {
+  const getDaysUntilDue = (dueDate: string | null): number | null => {
     if (!dueDate) return null;
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -187,7 +192,7 @@ export const TasksPage: React.FC = () => {
     return diffDays;
   };
 
-  const getDueDateStatus = (dueDate: string | null) => {
+  const getDueDateStatus = (dueDate: string | null): { text: string; color: string } | null => {
     if (!dueDate) return null;
     const days = getDaysUntilDue(dueDate);
     if (days === null) return null;
@@ -255,13 +260,11 @@ export const TasksPage: React.FC = () => {
     { label: 'Completed', value: 'completed' },
   ];
 
-  // Check if user can edit/delete task
-  const canManageTask = (task: Task) => {
+  const canManageTask = (task: Task): boolean => {
     return task.user_id === currentUser.id;
   };
 
-  // Check if task is assigned to current user
-  const isAssignedToMe = (task: Task) => {
+  const isAssignedToMe = (task: Task): boolean => {
     return task.assigned_to === currentUser.id;
   };
 
@@ -289,7 +292,6 @@ export const TasksPage: React.FC = () => {
         <Navbar />
         
         <main className="p-4 sm:p-6 lg:p-8">
-          {/* Header */}
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
             <div>
               <h1 className="text-2xl sm:text-3xl font-bold text-gray-800">My Tasks</h1>
@@ -303,7 +305,6 @@ export const TasksPage: React.FC = () => {
             </Link>
           </div>
 
-          {/* Alerts */}
           {error && (
             <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-xl flex items-center gap-3">
               <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0" />
@@ -324,7 +325,6 @@ export const TasksPage: React.FC = () => {
             </div>
           )}
 
-          {/* Stats Cards */}
           <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
             {statsCards.map((stat, index) => {
               const Icon = stat.icon;
@@ -344,7 +344,6 @@ export const TasksPage: React.FC = () => {
             })}
           </div>
 
-          {/* Search and Filters */}
           <Card className="p-4 mb-6">
             <div className="flex flex-col gap-4">
               <div className="flex flex-col sm:flex-row gap-4">
@@ -389,7 +388,6 @@ export const TasksPage: React.FC = () => {
                 </button>
               </div>
 
-              {/* Quick Status Filters */}
               <div className="flex flex-wrap gap-2">
                 {quickFilters.map((filter) => (
                   <button
@@ -462,14 +460,12 @@ export const TasksPage: React.FC = () => {
             </div>
           </Card>
 
-          {/* Results Count */}
           <div className="flex justify-between items-center mb-4">
             <p className="text-sm text-gray-500">
               Showing {filteredTasks.length} of {tasks.length} tasks
             </p>
           </div>
 
-          {/* Tasks List */}
           {filteredTasks.length === 0 ? (
             <Card className="p-12 text-center">
               <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -556,7 +552,6 @@ export const TasksPage: React.FC = () => {
                       </div>
 
                       <div className="flex flex-wrap items-center gap-2 lg:gap-3">
-                        {/* Status Update - Everyone can change status of their tasks */}
                         {(canManage || assignedToMe) && (
                           <select
                             value={task.status}
@@ -569,7 +564,6 @@ export const TasksPage: React.FC = () => {
                           </select>
                         )}
 
-                        {/* Priority Update - Only if user created the task */}
                         {canManage && (
                           <select
                             value={task.priority}
@@ -622,7 +616,6 @@ export const TasksPage: React.FC = () => {
         </main>
       </div>
 
-      {/* Task Details Modal */}
       {showTaskModal && selectedTask && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">

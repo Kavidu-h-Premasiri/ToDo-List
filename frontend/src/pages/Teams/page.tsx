@@ -35,22 +35,6 @@ interface TeamMember {
   profile_photo?: string;
 }
 
-interface TeamResponse {
-  teams: Team[];
-}
-
-interface TeamDetailsResponse {
-  team: {
-    id: number;
-    name: string;
-    description: string;
-    created_by: number;
-    created_at: string;
-  };
-  members: TeamMember[];
-  user_role: string;
-}
-
 interface ApiError {
   message: string;
 }
@@ -78,7 +62,7 @@ export const TeamsPage: React.FC = () => {
 
   const fetchTeamDetails = useCallback(async (teamId: number): Promise<void> => {
     try {
-      const response = await teamService.getTeamDetails<TeamDetailsResponse>(teamId);
+      const response = await teamService.getTeamDetails(teamId);
       setTeamMembers(response?.members || []);
       setUserRole(response?.user_role || '');
     } catch (err) {
@@ -89,8 +73,8 @@ export const TeamsPage: React.FC = () => {
 
   const fetchTeams = useCallback(async (): Promise<void> => {
     try {
-      const response = await teamService.getMyTeams<TeamResponse>();
-      const teamsData = response?.teams || [];
+      const response = await teamService.getMyTeams();
+      const teamsData: Team[] = response?.teams || [];
       setTeams(teamsData);
       if (teamsData.length > 0 && !selectedTeam) {
         setSelectedTeam(teamsData[0]);
@@ -105,22 +89,21 @@ export const TeamsPage: React.FC = () => {
     }
   }, [selectedTeam, fetchTeamDetails]);
 
-  // Replace the existing useEffect with this:
-useEffect(() => {
-  let isMounted = true;
-  
-  const loadData = async (): Promise<void> => {
-    if (isMounted) {
-      await fetchTeams();
-    }
-  };
-  
-  loadData();
-  
-  return () => {
-    isMounted = false;
-  };
-}, [fetchTeams]);
+  useEffect(() => {
+    let isMounted = true;
+    
+    const loadData = async (): Promise<void> => {
+      if (isMounted) {
+        await fetchTeams();
+      }
+    };
+    
+    loadData();
+    
+    return () => {
+      isMounted = false;
+    };
+  }, [fetchTeams]);
 
   const handleCreateTeam = async (): Promise<void> => {
     if (!newTeamName.trim()) {
@@ -262,7 +245,6 @@ useEffect(() => {
           )}
 
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-            {/* Teams List Sidebar */}
             <Card className="p-4 lg:col-span-1">
               <h2 className="text-lg font-semibold text-gray-800 mb-4">Your Teams</h2>
               <div className="space-y-2">
@@ -305,7 +287,6 @@ useEffect(() => {
               </div>
             </Card>
 
-            {/* Team Details */}
             {selectedTeam ? (
               <Card className="p-6 lg:col-span-3">
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
@@ -327,7 +308,6 @@ useEffect(() => {
                   </div>
                 </div>
 
-                {/* Team Members */}
                 <div>
                   <h3 className="text-lg font-semibold text-gray-800 mb-4">
                     Team Members ({teamMembers.length})
@@ -401,7 +381,6 @@ useEffect(() => {
             )}
           </div>
 
-          {/* Create Team Modal */}
           {showCreateModal && (
             <>
               <div className="fixed inset-0 bg-black/50 z-40" onClick={() => setShowCreateModal(false)} />
@@ -448,7 +427,6 @@ useEffect(() => {
             </>
           )}
 
-          {/* Invite Member Modal */}
           {showInviteModal && (
             <>
               <div className="fixed inset-0 bg-black/50 z-40" onClick={() => setShowInviteModal(false)} />
@@ -499,7 +477,6 @@ useEffect(() => {
             </>
           )}
 
-          {/* Team Tasks Modal */}
           {showTasksModal && selectedTeamForTasks && (
             <TeamTasksModal
               teamId={selectedTeamForTasks.id}

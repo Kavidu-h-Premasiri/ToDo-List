@@ -12,7 +12,7 @@ import (
 )
 
 func main() {
-	// Load environment variables
+	// Load environment variables (optional in Docker)
 	if err := godotenv.Load(); err != nil {
 		log.Println("No .env file found, using system environment variables")
 	}
@@ -20,12 +20,17 @@ func main() {
 	// Connect to database
 	database.ConnectDB()
 
+	// Set Gin mode
+	if os.Getenv("GIN_MODE") == "release" {
+		gin.SetMode(gin.ReleaseMode)
+	}
+
 	// Initialize Gin
 	r := gin.Default()
 
-	// CORS configuration - Allow React frontend
+	// CORS configuration for Docker environment
 	r.Use(cors.New(cors.Config{
-		AllowOrigins:     []string{"http://localhost:5173", "http://localhost:3000"},
+		AllowAllOrigins:  true,
 		AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
 		AllowHeaders:     []string{"Origin", "Content-Type", "Accept", "Authorization", "X-Requested-With"},
 		ExposeHeaders:    []string{"Content-Length"},
@@ -42,6 +47,5 @@ func main() {
 	}
 
 	log.Printf("Server starting on port %s", port)
-	log.Printf("Frontend should connect to http://localhost:%s", port)
 	r.Run(":" + port)
 }

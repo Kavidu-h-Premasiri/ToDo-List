@@ -3,9 +3,13 @@ import { Sidebar } from '../../components/Layout/Sidebar';
 import { Navbar } from '../../components/Layout/Navbar';
 import { Card } from '../../components/UI/Card';
 import { Button } from '../../components/UI/Button';
-import { taskService } from '../../services/api.ts';
+import { taskService } from '../../services/api';
 import { useNavigate } from 'react-router-dom';
 import { AlertCircle, CheckCircle } from 'lucide-react';
+
+interface ApiError {
+  message: string;
+}
 
 export const CreateTaskPage: React.FC = () => {
   const navigate = useNavigate();
@@ -33,19 +37,16 @@ export const CreateTaskPage: React.FC = () => {
     setSuccess('');
     
     try {
-      // Prepare data for API - format date properly if provided
-      const taskData = {
+      const taskData: any = {
         title: formData.title,
         description: formData.description,
         status: formData.status,
         priority: formData.priority,
       };
       
-      // Only add due_date if it has a value
       if (formData.due_date) {
-        // Format date to ISO string with time component
         const dueDate = new Date(formData.due_date);
-        dueDate.setHours(23, 59, 59, 999); // Set to end of day
+        dueDate.setHours(23, 59, 59, 999);
         taskData.due_date = dueDate.toISOString();
       }
       
@@ -57,9 +58,10 @@ export const CreateTaskPage: React.FC = () => {
       setTimeout(() => {
         navigate('/tasks');
       }, 1500);
-    } catch (err: any) {
-      console.error('Error creating task:', err);
-      setError(err.message || 'Failed to create task. Please try again.');
+    } catch (err) {
+      const apiError = err as ApiError;
+      console.error('Error creating task:', apiError);
+      setError(apiError.message || 'Failed to create task. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -70,7 +72,6 @@ export const CreateTaskPage: React.FC = () => {
       ...formData,
       [e.target.name]: e.target.value,
     });
-    // Clear messages when user starts typing
     if (error) setError('');
     if (success) setSuccess('');
   };

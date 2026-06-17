@@ -3,12 +3,16 @@ import { Sidebar } from '../../components/Layout/Sidebar';
 import { Navbar } from '../../components/Layout/Navbar';
 import { Card } from '../../components/UI/Card';
 import { Button } from '../../components/UI/Button';
-import { taskService } from '../../services/api.ts';
+import { taskService } from '../../services/api';
 import { useNavigate, useParams } from 'react-router-dom';
 import { AlertCircle, CheckCircle } from 'lucide-react';
 
+interface ApiError {
+  message: string;
+}
+
 export const EditTaskPage: React.FC = () => {
-  const { id } = useParams();
+  const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(true);
@@ -28,7 +32,7 @@ export const EditTaskPage: React.FC = () => {
 
   const fetchTask = async () => {
     try {
-      const task = await taskService.getTask(id);
+      const task = await taskService.getTask(id as string);
       setFormData({
         title: task.title || '',
         description: task.description || '',
@@ -36,9 +40,10 @@ export const EditTaskPage: React.FC = () => {
         priority: task.priority || 'medium',
         due_date: task.due_date ? task.due_date.split('T')[0] : '',
       });
-    } catch (err: any) {
-      console.error('Error fetching task:', err);
-      setError(err.message || 'Failed to load task');
+    } catch (err) {
+      const apiError = err as ApiError;
+      console.error('Error fetching task:', apiError);
+      setError(apiError.message || 'Failed to load task');
     } finally {
       setFetching(false);
     }
@@ -57,29 +62,28 @@ export const EditTaskPage: React.FC = () => {
     setSuccess('');
     
     try {
-      // Prepare data for API
-      const taskData = {
+      const taskData: any = {
         title: formData.title,
         description: formData.description,
         status: formData.status,
         priority: formData.priority,
       };
       
-      // Only add due_date if it has a value
       if (formData.due_date) {
         const dueDate = new Date(formData.due_date);
         dueDate.setHours(23, 59, 59, 999);
         taskData.due_date = dueDate.toISOString();
       }
       
-      await taskService.updateTask(id, taskData);
+      await taskService.updateTask(id as string, taskData);
       setSuccess('Task updated successfully! Redirecting...');
       setTimeout(() => {
         navigate('/tasks');
       }, 1500);
-    } catch (err: any) {
-      console.error('Error updating task:', err);
-      setError(err.message || 'Failed to update task. Please try again.');
+    } catch (err) {
+      const apiError = err as ApiError;
+      console.error('Error updating task:', apiError);
+      setError(apiError.message || 'Failed to update task. Please try again.');
     } finally {
       setLoading(false);
     }

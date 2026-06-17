@@ -3,8 +3,12 @@ import { Sidebar } from '../../components/Layout/Sidebar';
 import { Navbar } from '../../components/Layout/Navbar';
 import { Card } from '../../components/UI/Card';
 import { Button } from '../../components/UI/Button';
-import { User, Mail, Save, X, Camera, Trash2, AlertCircle, CheckCircle, Upload } from 'lucide-react';
-import { authService } from '../../services/api.ts';
+import { User, Mail, Save, X, Camera, Trash2, AlertCircle, CheckCircle } from 'lucide-react';
+import { authService } from '../../services/api';
+
+interface ApiError {
+  message: string;
+}
 
 export const ProfilePage: React.FC = () => {
   const [isEditing, setIsEditing] = useState(false);
@@ -58,14 +62,12 @@ export const ProfilePage: React.FC = () => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Validate file type
     const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
     if (!allowedTypes.includes(file.type)) {
       setError('Please upload a valid image file (JPEG, PNG, GIF, or WEBP)');
       return;
     }
 
-    // Validate file size (5MB max)
     if (file.size > 5 * 1024 * 1024) {
       setError('File size too large. Maximum size is 5MB');
       return;
@@ -81,14 +83,14 @@ export const ProfilePage: React.FC = () => {
         setProfilePhoto(`http://localhost:8080${response.photo_url}`);
         setSuccess('Profile photo updated successfully!');
         
-        // Update user data in localStorage
         const updatedUser = { ...userData, profile_photo: response.photo_url };
         localStorage.setItem('user', JSON.stringify(updatedUser));
         
         setTimeout(() => setSuccess(''), 3000);
       }
-    } catch (err: any) {
-      setError(err.message || 'Failed to upload photo');
+    } catch (err) {
+      const apiError = err as ApiError;
+      setError(apiError.message || 'Failed to upload photo');
       setTimeout(() => setError(''), 3000);
     } finally {
       setUploading(false);
@@ -107,13 +109,13 @@ export const ProfilePage: React.FC = () => {
       setProfilePhoto(null);
       setSuccess('Profile photo deleted successfully!');
       
-      // Update user data in localStorage
       const updatedUser = { ...userData, profile_photo: null };
       localStorage.setItem('user', JSON.stringify(updatedUser));
       
       setTimeout(() => setSuccess(''), 3000);
-    } catch (err: any) {
-      setError(err.message || 'Failed to delete photo');
+    } catch (err) {
+      const apiError = err as ApiError;
+      setError(apiError.message || 'Failed to delete photo');
       setTimeout(() => setError(''), 3000);
     } finally {
       setUploading(false);
@@ -133,8 +135,9 @@ export const ProfilePage: React.FC = () => {
       setSuccess('Profile updated successfully!');
       setTimeout(() => setSuccess(''), 3000);
       setIsEditing(false);
-    } catch (err: any) {
-      setError(err.message || 'Failed to update profile');
+    } catch (err) {
+      const apiError = err as ApiError;
+      setError(apiError.message || 'Failed to update profile');
     } finally {
       setLoading(false);
     }
@@ -158,7 +161,6 @@ export const ProfilePage: React.FC = () => {
             <p className="text-gray-500 mb-6">Manage your account settings and profile photo</p>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              {/* Profile Image Section */}
               <Card className="p-6">
                 <div className="text-center">
                   <div className="relative inline-block group">
@@ -168,6 +170,7 @@ export const ProfilePage: React.FC = () => {
                           src={profilePhoto} 
                           alt={userData.name}
                           className="w-full h-full object-cover"
+                          onError={() => setProfilePhoto(null)}
                         />
                       ) : (
                         <span className="text-4xl font-bold text-white">
@@ -176,7 +179,6 @@ export const ProfilePage: React.FC = () => {
                       )}
                     </div>
                     
-                    {/* Upload Button Overlay */}
                     <button
                       onClick={() => fileInputRef.current?.click()}
                       className="absolute bottom-0 right-0 p-2 bg-white rounded-full shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-110"
@@ -233,7 +235,6 @@ export const ProfilePage: React.FC = () => {
                 </div>
               </Card>
 
-              {/* Profile Details Section */}
               <Card className="lg:col-span-2 p-6">
                 <div className="flex justify-between items-center mb-6">
                   <h3 className="text-lg font-semibold text-gray-800">Personal Information</h3>

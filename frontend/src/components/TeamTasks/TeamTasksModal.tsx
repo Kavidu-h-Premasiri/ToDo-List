@@ -45,16 +45,16 @@ interface TaskData {
   status?: string;
 }
 
-interface TeamTaskResponse {
+interface TasksResponse {
   tasks: Task[];
-  user_role: string;
-  total: number;
-  is_admin: boolean;
+  user_role?: string;
+  total?: number;
+  is_admin?: boolean;
 }
 
 interface MembersResponse {
   members: Member[];
-  user_role: string;
+  user_role?: string;
 }
 
 export const TeamTasksModal: React.FC<TeamTasksModalProps> = ({ teamId, teamName, userRole, onClose }) => {
@@ -79,15 +79,14 @@ export const TeamTasksModal: React.FC<TeamTasksModalProps> = ({ teamId, teamName
     setLoading(true);
     setError('');
     try {
-      const tasksResponse = await teamTaskService.getTeamTasks<TeamTaskResponse>(teamId);
+      const tasksResponse = await teamTaskService.getTeamTasks(teamId) as TasksResponse;
       console.log('Tasks response:', tasksResponse);
       
-      const tasksData = tasksResponse?.tasks || [];
+      const tasksData: Task[] = tasksResponse?.tasks || [];
       setTasks(tasksData);
       
-      // Only fetch members if user is admin
       if (isAdmin) {
-        const membersResponse = await teamTaskService.getTeamMembers<MembersResponse>(teamId);
+        const membersResponse = await teamTaskService.getTeamMembers(teamId) as MembersResponse;
         setMembers(membersResponse?.members || []);
       } else {
         setMembers([]);
@@ -233,7 +232,6 @@ export const TeamTasksModal: React.FC<TeamTasksModalProps> = ({ teamId, teamName
       const task = tasks.find(t => t.id === taskId);
       if (!task) return;
       
-      // Check if user is admin OR task is assigned to them
       const isAssignedToMe = task.assigned_to === task.user_id;
       if (!isAdmin && !isAssignedToMe) {
         alert('You can only change status of tasks assigned to you');
@@ -295,13 +293,7 @@ export const TeamTasksModal: React.FC<TeamTasksModalProps> = ({ teamId, teamName
     return today.toISOString().split('T')[0];
   };
 
-  // Check if user can view task details (admin or assigned to them)
   const canViewTask = (task: Task): boolean => {
-    return isAdmin || task.assigned_to === task.user_id;
-  };
-
-  // Check if user can update task status
-  const canUpdateStatus = (task: Task): boolean => {
     return isAdmin || task.assigned_to === task.user_id;
   };
 
@@ -352,7 +344,6 @@ export const TeamTasksModal: React.FC<TeamTasksModalProps> = ({ teamId, teamName
           </div>
         </div>
 
-        {/* Error Message */}
         {error && (
           <div className="mx-6 mt-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm">
             {error}
@@ -362,7 +353,6 @@ export const TeamTasksModal: React.FC<TeamTasksModalProps> = ({ teamId, teamName
           </div>
         )}
 
-        {/* Content */}
         <div className="flex-1 overflow-auto p-6">
           {tasks.length === 0 ? (
             <div className="text-center py-12">
@@ -388,7 +378,6 @@ export const TeamTasksModal: React.FC<TeamTasksModalProps> = ({ teamId, teamName
                 const canUpdate = isAdmin || isAssignedToMe;
                 const isReadOnly = !isAdmin && !isAssignedToMe;
 
-                // Only show tasks that user can view
                 if (!canViewTask(task)) {
                   return null;
                 }
@@ -446,7 +435,6 @@ export const TeamTasksModal: React.FC<TeamTasksModalProps> = ({ teamId, teamName
                       </div>
 
                       <div className="flex flex-wrap items-center gap-2">
-                        {/* Status - Members can ONLY change status of their tasks */}
                         {canUpdate ? (
                           <select
                             value={task.status}
@@ -464,7 +452,6 @@ export const TeamTasksModal: React.FC<TeamTasksModalProps> = ({ teamId, teamName
                           </span>
                         )}
 
-                        {/* Edit - ONLY Admin */}
                         {canEdit && (
                           <button
                             onClick={() => handleEditClick(task)}
@@ -475,7 +462,6 @@ export const TeamTasksModal: React.FC<TeamTasksModalProps> = ({ teamId, teamName
                           </button>
                         )}
 
-                        {/* Delete - ONLY Admin */}
                         {canDelete && (
                           <button
                             onClick={() => handleDeleteTask(task.id)}
@@ -495,7 +481,6 @@ export const TeamTasksModal: React.FC<TeamTasksModalProps> = ({ teamId, teamName
         </div>
       </div>
 
-      {/* Create/Edit Modal - ONLY Admin */}
       {(showCreateForm || (editingTask && isAdmin)) && (
         <div className="fixed inset-0 bg-black/50 z-60 flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl w-full max-w-md p-6">
