@@ -15,4 +15,14 @@ export default defineConfig({
   css: {
     postcss: './postcss.config.js',
   },
+  server: {
+    proxy: {
+      '/api': {
+        target: 'http://localhost:8080', // Replace with your backend port
+        changeOrigin: true,
+        secure: false,
+        rewrite: (path) => path, // Keep the /api prefix
+      }
+    }
+  }
 })

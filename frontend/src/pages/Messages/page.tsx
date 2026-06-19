@@ -1,8 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Sidebar } from '../../components/Layout/Sidebar';
 import { Navbar } from '../../components/Layout/Navbar';
-import { Card } from '../../components/UI/Card';
-import { Button } from '../../components/UI/Button';
 import { 
   Send, 
   Users, 
@@ -223,13 +221,13 @@ export const MessagesPage: React.FC = () => {
   };
 
   const getFileIcon = (fileType: string): React.ReactElement => {
-    if (fileType.startsWith('image/')) return <Image className="w-5 h-5 text-blue-500" />;
-    if (fileType === 'application/pdf') return <File className="w-5 h-5 text-red-500" />;
-    if (fileType.includes('word')) return <File className="w-5 h-5 text-blue-600" />;
+    if (fileType.startsWith('image/')) return <Image className="w-5 h-5 text-purple-400" />;
+    if (fileType === 'application/pdf') return <File className="w-5 h-5 text-red-400" />;
+    if (fileType.includes('word')) return <File className="w-5 h-5 text-blue-400" />;
     if (fileType.includes('excel') || fileType.includes('spreadsheet')) {
-      return <File className="w-5 h-5 text-green-600" />;
+      return <File className="w-5 h-5 text-green-400" />;
     }
-    return <File className="w-5 h-5 text-gray-500" />;
+    return <File className="w-5 h-5 text-gray-400" />;
   };
 
   const isMessageFromCurrentUser = (message: ChatMessage): boolean => {
@@ -240,14 +238,17 @@ export const MessagesPage: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-black overflow-hidden">
         <Sidebar />
         <div className="lg:pl-72">
           <Navbar />
           <div className="p-8 flex items-center justify-center h-96">
-            <div className="text-center">
-              <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-              <p className="text-gray-500">Loading messages...</p>
+            <div className="text-center relative">
+              <div className="absolute inset-0 bg-gradient-to-r from-purple-600/20 via-pink-600/20 to-cyan-600/20 blur-2xl animate-pulse"></div>
+              <div className="relative">
+                <div className="w-20 h-20 border-4 border-purple-500/30 border-t-purple-500 rounded-full animate-spin mx-auto mb-4 shadow-[0_0_30px_rgba(168,85,247,0.3)]"></div>
+                <p className="text-purple-400 font-mono tracking-wider animate-pulse">LOADING MESSAGES...</p>
+              </div>
             </div>
           </div>
         </div>
@@ -256,55 +257,67 @@ export const MessagesPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+    <div className="min-h-screen bg-black overflow-hidden">
+      {/* Animated background */}
+      <div className="fixed inset-0 bg-[radial-gradient(circle_at_30%_20%,#ff00ff11,transparent_60%),radial-gradient(circle_at_70%_80%,#00ffff11,transparent_60%),radial-gradient(circle_at_50%_50%,#000000,#0a0a0a)]"></div>
+      <div className="fixed inset-0 bg-[linear-gradient(rgba(255,255,255,0.01)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.01)_1px,transparent_1px)] bg-[size:40px_40px] [mask-image:radial-gradient(ellipse_at_center,black,transparent_70%)]"></div>
+      
       <Sidebar />
-      <div className="lg:pl-72">
+      <div className="lg:pl-72 relative z-10">
         <Navbar />
         
         <main className="h-[calc(100vh-4rem)] p-4">
           <div className="flex h-full gap-4">
             {/* Chat List */}
-            <Card className="w-80 flex-shrink-0 overflow-hidden flex flex-col">
-              <div className="p-4 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-indigo-50">
-                <h2 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
-                  <MessageSquare className="w-5 h-5 text-blue-500" />
-                  Messages
+            <div className="relative bg-black/40 backdrop-blur-2xl rounded-2xl border border-white/10 w-80 flex-shrink-0 overflow-hidden flex flex-col shadow-[0_0_80px_-20px_rgba(255,0,255,0.05)]">
+              <div className="absolute -inset-0.5 bg-gradient-to-r from-purple-600/20 via-pink-600/20 to-cyan-600/20 rounded-2xl blur opacity-20"></div>
+              
+              <div className="relative p-4 border-b border-white/10 bg-gradient-to-r from-purple-600/10 via-pink-600/10 to-cyan-600/10">
+                <h2 className="text-lg font-bold bg-gradient-to-r from-purple-400 to-cyan-400 bg-clip-text text-transparent flex items-center gap-2 font-mono tracking-wider">
+                  <MessageSquare className="w-5 h-5 text-purple-400" />
+                  MESSAGES
                 </h2>
-                <p className="text-xs text-gray-500 mt-1">Team conversations</p>
+                <p className="text-xs text-gray-400 font-mono mt-1 tracking-wider">TEAM CONVERSATIONS</p>
               </div>
               
-              <div className="flex-1 overflow-y-auto">
+              <div className="relative flex-1 overflow-y-auto">
                 {chats.length === 0 ? (
-                  <div className="p-8 text-center text-gray-500">
-                    <Users className="w-12 h-12 text-gray-300 mx-auto mb-2" />
-                    <p>No team chats yet</p>
-                    <p className="text-xs mt-1">Join or create a team to start chatting</p>
+                  <div className="p-8 text-center">
+                    <div className="w-16 h-16 bg-gradient-to-br from-purple-500/10 to-cyan-500/10 rounded-full flex items-center justify-center mx-auto mb-3 border border-white/10">
+                      <Users className="w-8 h-8 text-gray-500" />
+                    </div>
+                    <p className="text-gray-400 font-mono tracking-wider">NO TEAM CHATS</p>
+                    <p className="text-xs text-gray-500 font-mono mt-1">JOIN OR CREATE A TEAM TO START CHATTING</p>
                   </div>
                 ) : (
                   chats.map((chat) => (
                     <button
                       key={chat.team_id}
                       onClick={() => setSelectedTeamId(chat.team_id)}
-                      className={`w-full p-4 text-left border-b border-gray-100 hover:bg-gray-50 transition-all ${
-                        selectedTeamId === chat.team_id ? 'bg-blue-50 border-l-4 border-blue-500' : ''
+                      className={`w-full p-4 text-left border-b border-white/5 hover:bg-white/5 transition-all duration-300 group ${
+                        selectedTeamId === chat.team_id 
+                          ? 'bg-gradient-to-r from-purple-600/20 via-pink-600/20 to-cyan-600/20 border-l-4 border-purple-500' 
+                          : ''
                       }`}
                     >
                       <div className="flex items-start justify-between">
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2">
-                            <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full flex items-center justify-center text-white font-semibold text-sm flex-shrink-0">
+                            <div className="w-8 h-8 bg-gradient-to-r from-purple-600 via-pink-600 to-cyan-600 rounded-full flex items-center justify-center text-white font-bold text-sm flex-shrink-0 shadow-[0_0_20px_rgba(168,85,247,0.2)]">
                               {chat.team_name.charAt(0).toUpperCase()}
                             </div>
                             <div className="flex-1 min-w-0">
-                              <p className="font-semibold text-gray-800 truncate">{chat.team_name}</p>
-                              <p className="text-xs text-gray-500 truncate">
+                              <p className={`font-bold truncate font-mono tracking-wide ${selectedTeamId === chat.team_id ? 'text-white' : 'text-gray-300 group-hover:text-white'}`}>
+                                {chat.team_name}
+                              </p>
+                              <p className="text-xs text-gray-500 truncate font-mono">
                                 {chat.last_message ? (
                                   <>
-                                    <span className="font-medium">{chat.sender_name}: </span>
-                                    {chat.last_message}
+                                    <span className="text-purple-400 font-medium">{chat.sender_name}: </span>
+                                    <span className="text-gray-400">{chat.last_message}</span>
                                   </>
                                 ) : (
-                                  'No messages yet'
+                                  <span className="text-gray-500">NO MESSAGES YET</span>
                                 )}
                               </p>
                             </div>
@@ -312,12 +325,12 @@ export const MessagesPage: React.FC = () => {
                         </div>
                         <div className="flex flex-col items-end gap-1 flex-shrink-0 ml-2">
                           {chat.last_message_at && (
-                            <span className="text-xs text-gray-400">
+                            <span className="text-xs text-gray-500 font-mono">
                               {formatTime(chat.last_message_at)}
                             </span>
                           )}
                           {chat.unread_count > 0 && (
-                            <span className="bg-blue-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
+                            <span className="bg-gradient-to-r from-purple-600 to-pink-600 text-white text-xs font-bold px-2 py-0.5 rounded-full shadow-[0_0_20px_rgba(168,85,247,0.3)] animate-pulse">
                               {chat.unread_count}
                             </span>
                           )}
@@ -327,40 +340,44 @@ export const MessagesPage: React.FC = () => {
                   ))
                 )}
               </div>
-            </Card>
+            </div>
 
             {/* Chat Area */}
-            <Card className="flex-1 overflow-hidden flex flex-col">
+            <div className="relative bg-black/40 backdrop-blur-2xl rounded-2xl border border-white/10 flex-1 overflow-hidden flex flex-col shadow-[0_0_80px_-20px_rgba(255,0,255,0.05)]">
+              <div className="absolute -inset-0.5 bg-gradient-to-r from-purple-600/20 via-pink-600/20 to-cyan-600/20 rounded-2xl blur opacity-20"></div>
+              
               {selectedTeamId ? (
                 <>
                   {/* Chat Header */}
-                  <div className="p-4 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-indigo-50 flex items-center justify-between">
+                  <div className="relative p-4 border-b border-white/10 bg-gradient-to-r from-purple-600/10 via-pink-600/10 to-cyan-600/10 flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full flex items-center justify-center text-white font-semibold">
+                      <div className="w-10 h-10 bg-gradient-to-r from-purple-600 via-pink-600 to-cyan-600 rounded-full flex items-center justify-center text-white font-bold shadow-[0_0_20px_rgba(168,85,247,0.3)]">
                         {selectedTeam?.team_name.charAt(0).toUpperCase()}
                       </div>
                       <div>
-                        <h3 className="font-semibold text-gray-800">{selectedTeam?.team_name}</h3>
-                        <p className="text-xs text-gray-500">
-                          {chats.find(c => c.team_id === selectedTeamId)?.unread_count || 0} unread
+                        <h3 className="font-bold text-white font-mono tracking-wide">{selectedTeam?.team_name}</h3>
+                        <p className="text-xs text-gray-400 font-mono">
+                          {chats.find(c => c.team_id === selectedTeamId)?.unread_count || 0} UNREAD
                         </p>
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className="text-xs text-gray-500 flex items-center gap-1">
-                        <Users className="w-3 h-3" />
-                        Team Chat
+                      <span className="text-xs text-gray-400 font-mono flex items-center gap-1">
+                        <Users className="w-3 h-3 text-purple-400" />
+                        TEAM CHAT
                       </span>
                     </div>
                   </div>
 
                   {/* Messages */}
-                  <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-gray-50/50">
+                  <div className="relative flex-1 overflow-y-auto p-4 space-y-3">
                     {messages.length === 0 ? (
-                      <div className="flex flex-col items-center justify-center h-full text-gray-400">
-                        <MessageSquare className="w-16 h-16 mb-4 text-gray-300" />
-                        <p className="font-medium">No messages yet</p>
-                        <p className="text-sm">Start the conversation!</p>
+                      <div className="flex flex-col items-center justify-center h-full">
+                        <div className="w-20 h-20 bg-gradient-to-br from-purple-500/10 to-cyan-500/10 rounded-full flex items-center justify-center mb-4 border border-white/10">
+                          <MessageSquare className="w-10 h-10 text-gray-500" />
+                        </div>
+                        <p className="text-white font-mono tracking-wider">NO MESSAGES YET</p>
+                        <p className="text-sm text-gray-400 font-mono mt-1">START THE CONVERSATION!</p>
                       </div>
                     ) : (
                       messages.map((message) => {
@@ -368,23 +385,23 @@ export const MessagesPage: React.FC = () => {
                         return (
                           <div
                             key={message.id}
-                            className={`flex ${isMine ? 'justify-end' : 'justify-start'}`}
+                            className={`flex ${isMine ? 'justify-end' : 'justify-start'} animate-slide-up`}
                           >
                             <div className={`max-w-[70%] ${isMine ? 'order-2' : 'order-1'}`}>
                               <div className={`rounded-2xl px-4 py-2.5 ${
                                 isMine
-                                  ? 'bg-blue-500 text-white'
-                                  : 'bg-white border border-gray-200 text-gray-800'
+                                  ? 'bg-gradient-to-r from-purple-600 via-pink-600 to-cyan-600 text-white shadow-[0_0_30px_rgba(168,85,247,0.2)]'
+                                  : 'bg-white/5 border border-white/10 text-gray-200'
                               }`}>
                                 {!isMine && message.sender && (
-                                  <p className="text-xs font-semibold text-blue-600 mb-1">
+                                  <p className="text-xs font-bold text-purple-400 mb-1 font-mono">
                                     {message.sender.name}
                                   </p>
                                 )}
                                 
                                 {/* Message Content */}
                                 {message.content && (
-                                  <p className="text-sm break-words">{message.content}</p>
+                                  <p className="text-sm break-words font-mono">{message.content}</p>
                                 )}
                                 
                                 {/* File Attachment */}
@@ -395,47 +412,47 @@ export const MessagesPage: React.FC = () => {
                                         <img 
                                           src={`http://localhost:8080${message.file_url}`}
                                           alt={message.file_name}
-                                          className="max-w-xs max-h-48 rounded-lg cursor-pointer hover:opacity-90 transition"
+                                          className="max-w-xs max-h-48 rounded-lg cursor-pointer hover:opacity-90 transition border border-white/10"
                                           onClick={() => window.open(`http://localhost:8080${message.file_url}`, '_blank')}
                                         />
                                         <a
                                           href={`http://localhost:8080${message.file_url}`}
                                           download={message.file_name}
-                                          className="absolute top-2 right-2 p-1.5 bg-black/50 rounded-full opacity-0 group-hover:opacity-100 transition text-white"
+                                          className="absolute top-2 right-2 p-1.5 bg-black/70 backdrop-blur-sm rounded-full opacity-0 group-hover:opacity-100 transition text-white hover:scale-110"
                                         >
                                           <Download className="w-4 h-4" />
                                         </a>
                                       </div>
                                     ) : (
-                                      <div className="flex items-center gap-3 p-2 bg-gray-100 rounded-lg">
+                                      <div className="flex items-center gap-3 p-2 bg-black/30 rounded-lg border border-white/5">
                                         {getFileIcon(message.file_type)}
                                         <div className="flex-1 min-w-0">
-                                          <p className="text-sm font-medium truncate">{message.file_name}</p>
-                                          <p className="text-xs text-gray-500">{formatFileSize(message.file_size)}</p>
+                                          <p className="text-sm font-medium truncate text-gray-200">{message.file_name}</p>
+                                          <p className="text-xs text-gray-400 font-mono">{formatFileSize(message.file_size)}</p>
                                         </div>
                                         <a
                                           href={`http://localhost:8080${message.file_url}`}
                                           download={message.file_name}
-                                          className="p-1.5 hover:bg-gray-200 rounded-lg transition"
+                                          className="p-1.5 hover:bg-white/10 rounded-lg transition text-gray-400 hover:text-white"
                                         >
-                                          <Download className="w-4 h-4 text-gray-600" />
+                                          <Download className="w-4 h-4" />
                                         </a>
                                       </div>
                                     )}
                                   </div>
                                 )}
                               </div>
-                              <div className={`flex items-center gap-1 mt-1 text-xs text-gray-400 ${isMine ? 'justify-end' : 'justify-start'}`}>
+                              <div className={`flex items-center gap-1 mt-1 text-xs text-gray-500 font-mono ${isMine ? 'justify-end' : 'justify-start'}`}>
                                 <span>{formatTime(message.created_at)}</span>
                                 {isMine && (
-                                  <span className="text-blue-400">
+                                  <span className="text-purple-400">
                                     <Check className="w-3 h-3" />
                                   </span>
                                 )}
                               </div>
                             </div>
                             {!isMine && message.sender && (
-                              <div className="flex-shrink-0 w-8 h-8 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full flex items-center justify-center text-white font-semibold text-xs order-0 mr-2">
+                              <div className="flex-shrink-0 w-8 h-8 bg-gradient-to-r from-purple-600 via-pink-600 to-cyan-600 rounded-full flex items-center justify-center text-white font-bold text-xs order-0 mr-2 shadow-[0_0_20px_rgba(168,85,247,0.2)]">
                                 {message.sender.name.charAt(0).toUpperCase()}
                               </div>
                             )}
@@ -447,31 +464,31 @@ export const MessagesPage: React.FC = () => {
                   </div>
 
                   {/* Message Input */}
-                  <div className="p-4 border-t border-gray-200 bg-white">
+                  <div className="relative p-4 border-t border-white/10 bg-white/5">
                     {error && (
-                      <div className="mb-2 p-2 bg-red-50 border border-red-200 rounded-lg flex items-center gap-2 text-red-600 text-sm">
-                        <AlertCircle className="w-4 h-4" />
+                      <div className="mb-2 p-2 bg-red-950/50 border border-red-500/30 rounded-lg flex items-center gap-2 text-red-300 text-sm font-mono animate-shake">
+                        <AlertCircle className="w-4 h-4 text-red-400" />
                         {error}
                       </div>
                     )}
                     
                     {/* File Preview */}
                     {selectedFile && (
-                      <div className="mb-2 p-2 bg-gray-50 rounded-lg flex items-center gap-2">
+                      <div className="mb-2 p-2 bg-white/5 rounded-lg flex items-center gap-2 border border-white/10">
                         {filePreview ? (
-                          <img src={filePreview} alt="Preview" className="w-12 h-12 object-cover rounded" />
+                          <img src={filePreview} alt="Preview" className="w-12 h-12 object-cover rounded border border-white/10" />
                         ) : (
                           getFileIcon(selectedFile.type)
                         )}
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium truncate">{selectedFile.name}</p>
-                          <p className="text-xs text-gray-500">{formatFileSize(selectedFile.size)}</p>
+                          <p className="text-sm font-medium text-gray-200 truncate font-mono">{selectedFile.name}</p>
+                          <p className="text-xs text-gray-400 font-mono">{formatFileSize(selectedFile.size)}</p>
                         </div>
                         <button
                           onClick={removeFile}
-                          className="p-1 hover:bg-gray-200 rounded-lg transition"
+                          className="p-1 hover:bg-white/10 rounded-lg transition text-gray-400 hover:text-white"
                         >
-                          <X className="w-4 h-4 text-gray-500" />
+                          <X className="w-4 h-4" />
                         </button>
                       </div>
                     )}
@@ -480,7 +497,7 @@ export const MessagesPage: React.FC = () => {
                       <button
                         type="button"
                         onClick={() => fileInputRef.current?.click()}
-                        className="p-2.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition"
+                        className="p-2.5 text-gray-400 hover:text-purple-400 hover:bg-purple-500/10 rounded-lg transition-all duration-300 border border-white/10 hover:border-purple-500/30"
                         disabled={sending}
                       >
                         <Paperclip className="w-5 h-5" />
@@ -497,34 +514,115 @@ export const MessagesPage: React.FC = () => {
                         value={newMessage}
                         onChange={(e) => setNewMessage(e.target.value)}
                         placeholder="Type a message or attach a file..."
-                        className="flex-1 px-4 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                        className="flex-1 px-4 py-2.5 bg-black/50 border border-white/10 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500 transition-all duration-300 font-mono"
                         disabled={sending}
                       />
-                      <Button
+                      <button
                         type="submit"
-                        variant="primary"
                         disabled={(!newMessage.trim() && !selectedFile) || sending}
+                        className="p-2.5 bg-gradient-to-r from-purple-600 via-pink-600 to-cyan-600 text-white rounded-xl shadow-[0_0_30px_-5px_rgba(168,85,247,0.3)] hover:shadow-[0_0_50px_-5px_rgba(168,85,247,0.5)] transform hover:scale-105 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
                       >
                         {sending ? (
-                          <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                          <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
                         ) : (
                           <Send className="w-5 h-5" />
                         )}
-                      </Button>
+                      </button>
                     </form>
                   </div>
                 </>
               ) : (
-                <div className="flex-1 flex flex-col items-center justify-center text-gray-400">
-                  <MessageSquare className="w-20 h-20 text-gray-300 mb-4" />
-                  <p className="text-xl font-semibold text-gray-500">Select a team</p>
-                  <p className="text-sm">Choose a team from the left to start messaging</p>
+                <div className="relative flex-1 flex flex-col items-center justify-center">
+                  <div className="w-24 h-24 bg-gradient-to-br from-purple-500/10 to-cyan-500/10 rounded-full flex items-center justify-center mb-4 border border-white/10">
+                    <MessageSquare className="w-12 h-12 text-gray-500" />
+                  </div>
+                  <p className="text-xl font-bold text-white font-mono tracking-wider">SELECT A TEAM</p>
+                  <p className="text-sm text-gray-400 font-mono mt-1">CHOOSE A TEAM FROM THE LEFT TO START MESSAGING</p>
                 </div>
               )}
-            </Card>
+            </div>
           </div>
         </main>
       </div>
+
+      <style>{`
+        @keyframes gradient-x {
+          0%, 100% { background-position: 0% 50%; }
+          50% { background-position: 100% 50%; }
+        }
+        
+        @keyframes pulse {
+          0%, 100% { opacity: 0.3; transform: scale(1); }
+          50% { opacity: 0.8; transform: scale(1.05); }
+        }
+        
+        @keyframes shake {
+          0%, 100% { transform: translateX(0); }
+          10%, 30%, 50%, 70%, 90% { transform: translateX(-2px); }
+          20%, 40%, 60%, 80% { transform: translateX(2px); }
+        }
+        
+        @keyframes slide-up {
+          from {
+            opacity: 0;
+            transform: translateY(10px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+        
+        .animate-gradient-x {
+          background-size: 200% 200%;
+          animation: gradient-x 4s ease infinite;
+        }
+        
+        .animate-pulse {
+          animation: pulse 2s ease-in-out infinite;
+        }
+        
+        .animate-shake {
+          animation: shake 0.5s ease-in-out;
+        }
+        
+        .animate-slide-up {
+          animation: slide-up 0.3s ease-out forwards;
+        }
+        
+        /* Custom scrollbar */
+        .overflow-y-auto::-webkit-scrollbar {
+          width: 4px;
+        }
+        
+        .overflow-y-auto::-webkit-scrollbar-track {
+          background: rgba(255, 255, 255, 0.05);
+        }
+        
+        .overflow-y-auto::-webkit-scrollbar-thumb {
+          background: linear-gradient(to bottom, #a855f7, #06b6d4);
+          border-radius: 10px;
+        }
+        
+        /* Smooth transitions */
+        .transition-all {
+          transition-property: all;
+          transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+          transition-duration: 300ms;
+        }
+        
+        /* Input autofill override */
+        input:-webkit-autofill,
+        input:-webkit-autofill:hover,
+        input:-webkit-autofill:focus,
+        textarea:-webkit-autofill,
+        textarea:-webkit-autofill:hover,
+        textarea:-webkit-autofill:focus {
+          -webkit-text-fill-color: white;
+          -webkit-box-shadow: 0 0 0px 1000px rgba(0,0,0,0.5) inset;
+          transition: background-color 5000s ease-in-out 0s;
+        }
+      `}</style>
     </div>
   );
 };

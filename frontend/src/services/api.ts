@@ -1,4 +1,4 @@
-const API_URL = '/api';
+const API_URL = import.meta.env.VITE_API_URL || '/api';
 
 // ============ TYPES ============
 interface User {
@@ -219,13 +219,20 @@ const apiCall = async <T = ApiResponse>(
   }
 
   try {
+    console.log(`Making ${method} request to: ${API_URL}${endpoint}`);
     const response = await fetch(`${API_URL}${endpoint}`, config);
 
     if (response.status === 204) {
       return {} as T;
     }
 
-    const responseData = await response.json();
+    // Handle empty responses
+    const text = await response.text();
+    if (!text) {
+      throw new Error('Empty response from server');
+    }
+
+    const responseData = JSON.parse(text);
 
     if (!response.ok) {
       throw new Error(responseData.error || 'Something went wrong');

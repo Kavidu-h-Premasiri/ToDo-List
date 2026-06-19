@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Button } from '../UI/Button';
 import { teamTaskService } from '../../services/api';
-import { Edit, Trash2, Plus, X, Calendar, AlertCircle, CheckCircle, Clock, User, Crown, Lock } from 'lucide-react';
+import { Edit, Trash2, Plus, X, Calendar, AlertCircle, CheckCircle, Clock, User, Crown, Lock, Zap, Tag } from 'lucide-react';
 
 interface TeamTasksModalProps {
   teamId: number;
@@ -266,17 +266,17 @@ export const TeamTasksModal: React.FC<TeamTasksModalProps> = ({ teamId, teamName
 
   const getPriorityColor = (priority: string): string => {
     switch (priority) {
-      case 'high': return 'bg-red-100 text-red-700 border-red-200';
-      case 'medium': return 'bg-yellow-100 text-yellow-700 border-yellow-200';
-      default: return 'bg-blue-100 text-blue-700 border-blue-200';
+      case 'high': return 'bg-red-500/20 text-red-300 border-red-500/30';
+      case 'medium': return 'bg-yellow-500/20 text-yellow-300 border-yellow-500/30';
+      default: return 'bg-blue-500/20 text-blue-300 border-blue-500/30';
     }
   };
 
   const getStatusColor = (status: string): string => {
     switch (status) {
-      case 'completed': return 'bg-green-100 text-green-700 border-green-200';
-      case 'in_progress': return 'bg-yellow-100 text-yellow-700 border-yellow-200';
-      default: return 'bg-gray-100 text-gray-700 border-gray-200';
+      case 'completed': return 'bg-green-500/20 text-green-300 border-green-500/30';
+      case 'in_progress': return 'bg-yellow-500/20 text-yellow-300 border-yellow-500/30';
+      default: return 'bg-gray-500/20 text-gray-300 border-gray-500/30';
     }
   };
 
@@ -299,12 +299,15 @@ export const TeamTasksModal: React.FC<TeamTasksModalProps> = ({ teamId, teamName
 
   if (loading) {
     return (
-      <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-        <div className="bg-white rounded-2xl w-full max-w-6xl p-8">
+      <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div className="bg-black/90 backdrop-blur-2xl rounded-2xl border border-white/10 w-full max-w-6xl p-8 shadow-[0_0_80px_-20px_rgba(255,0,255,0.1)]">
           <div className="flex justify-center py-12">
-            <div className="text-center">
-              <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-              <p className="text-gray-500">Loading tasks...</p>
+            <div className="text-center relative">
+              <div className="absolute inset-0 bg-gradient-to-r from-purple-600/20 via-pink-600/20 to-cyan-600/20 blur-2xl animate-pulse"></div>
+              <div className="relative">
+                <div className="w-16 h-16 border-4 border-purple-500/30 border-t-purple-500 rounded-full animate-spin mx-auto mb-4 shadow-[0_0_30px_rgba(168,85,247,0.3)]"></div>
+                <p className="text-purple-400 font-mono tracking-wider animate-pulse">LOADING TASKS...</p>
+              </div>
             </div>
           </div>
         </div>
@@ -313,59 +316,83 @@ export const TeamTasksModal: React.FC<TeamTasksModalProps> = ({ teamId, teamName
   }
 
   return (
-    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl w-full max-w-6xl max-h-[90vh] overflow-hidden flex flex-col">
+    <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+      <div className="relative bg-black/90 backdrop-blur-2xl rounded-2xl border border-white/10 w-full max-w-6xl max-h-[90vh] overflow-hidden flex flex-col shadow-[0_0_80px_-20px_rgba(255,0,255,0.1)] animate-slide-up">
+        {/* Gradient border glow */}
+        <div className="absolute -inset-0.5 bg-gradient-to-r from-purple-600 via-pink-600 to-cyan-600 rounded-2xl blur opacity-20"></div>
+        
         {/* Header */}
-        <div className="flex justify-between items-center p-6 border-b border-gray-200">
+        <div className="relative flex justify-between items-center p-6 border-b border-white/10 bg-gradient-to-r from-purple-600/10 via-pink-600/10 to-cyan-600/10">
           <div>
-            <h2 className="text-2xl font-bold text-gray-800">{teamName} - Tasks</h2>
-            <p className="text-sm text-gray-500 mt-1">
-              {isAdmin ? 'Manage all team tasks' : 'Your assigned tasks only'}
-              <span className={`ml-2 px-2 py-0.5 text-xs rounded-full ${isAdmin ? 'bg-yellow-100 text-yellow-700' : 'bg-blue-100 text-blue-700'}`}>
-                {isAdmin ? 'Admin' : 'Member'}
+            <h2 className="text-2xl font-bold bg-gradient-to-r from-purple-400 via-pink-400 to-cyan-400 bg-clip-text text-transparent font-mono tracking-wider">
+              {teamName} - TASKS
+            </h2>
+            <p className="text-sm text-gray-400 font-mono mt-1 flex items-center gap-2">
+              <Zap className="w-3 h-3 text-purple-400" />
+              {isAdmin ? 'MANAGE ALL TEAM TASKS' : 'YOUR ASSIGNED TASKS ONLY'}
+              <span className={`ml-2 px-2 py-0.5 text-xs rounded-full font-mono ${
+                isAdmin ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30' : 'bg-blue-500/20 text-blue-400 border border-blue-500/30'
+              }`}>
+                {isAdmin ? 'ADMIN' : 'MEMBER'}
               </span>
               {!isAdmin && (
-                <span className="ml-2 text-xs text-gray-400">
-                  <Lock className="w-3 h-3 inline" /> Status only
+                <span className="ml-2 text-xs text-gray-500 font-mono flex items-center gap-1">
+                  <Lock className="w-3 h-3" /> STATUS ONLY
                 </span>
               )}
             </p>
           </div>
           <div className="flex gap-2">
             {isAdmin && (
-              <Button variant="primary" size="sm" onClick={() => setShowCreateForm(true)}>
+              <Button 
+                variant="primary" 
+                size="sm" 
+                onClick={() => setShowCreateForm(true)}
+                className="bg-gradient-to-r from-purple-600 via-pink-600 to-cyan-600 hover:shadow-[0_0_30px_rgba(168,85,247,0.3)] font-mono"
+              >
                 <Plus className="w-4 h-4 mr-2" />
-                Assign Task
+                ASSIGN TASK
               </Button>
             )}
-            <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-lg">
+            <button 
+              onClick={onClose} 
+              className="p-2 hover:bg-white/5 rounded-lg transition-all duration-300 text-gray-400 hover:text-white"
+            >
               <X className="w-5 h-5" />
             </button>
           </div>
         </div>
 
         {error && (
-          <div className="mx-6 mt-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm">
+          <div className="relative mx-6 mt-4 p-3 bg-red-950/50 border border-red-500/30 rounded-xl text-red-300 text-sm font-mono flex items-center gap-2">
+            <AlertCircle className="w-4 h-4 text-red-400" />
             {error}
-            <button onClick={fetchData} className="ml-3 text-blue-600 hover:text-blue-700">
-              Retry
+            <button 
+              onClick={fetchData} 
+              className="ml-3 text-purple-400 hover:text-purple-300 transition-colors"
+            >
+              RETRY
             </button>
           </div>
         )}
 
-        <div className="flex-1 overflow-auto p-6">
+        <div className="relative flex-1 overflow-auto p-6">
           {tasks.length === 0 ? (
             <div className="text-center py-12">
-              <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <CheckCircle className="w-8 h-8 text-gray-400" />
+              <div className="w-20 h-20 bg-gradient-to-br from-purple-500/10 to-cyan-500/10 rounded-full flex items-center justify-center mx-auto mb-4 border border-white/10">
+                <CheckCircle className="w-10 h-10 text-gray-500" />
               </div>
-              <p className="text-gray-500">
-                {isAdmin ? 'No tasks assigned in this team' : 'No tasks assigned to you'}
+              <p className="text-gray-400 font-mono">
+                {isAdmin ? 'NO TASKS ASSIGNED IN THIS TEAM' : 'NO TASKS ASSIGNED TO YOU'}
               </p>
               {isAdmin && (
-                <Button variant="primary" onClick={() => setShowCreateForm(true)} className="mt-4">
+                <Button 
+                  variant="primary" 
+                  onClick={() => setShowCreateForm(true)} 
+                  className="mt-4 bg-gradient-to-r from-purple-600 via-pink-600 to-cyan-600 hover:shadow-[0_0_30px_rgba(168,85,247,0.3)] font-mono"
+                >
                   <Plus className="w-4 h-4 mr-2" />
-                  Assign First Task
+                  ASSIGN FIRST TASK
                 </Button>
               )}
             </div>
@@ -383,51 +410,59 @@ export const TeamTasksModal: React.FC<TeamTasksModalProps> = ({ teamId, teamName
                 }
 
                 return (
-                  <div key={task.id} className={`p-4 border rounded-xl transition-all ${
-                    isAssignedToMe ? 'border-blue-200 bg-blue-50/30' : 'border-gray-100'
-                  } ${isReadOnly ? 'opacity-75' : ''} hover:shadow-md`}>
-                    <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                  <div 
+                    key={task.id} 
+                    className={`relative p-4 rounded-xl border transition-all duration-300 ${
+                      isAssignedToMe 
+                        ? 'bg-purple-500/5 border-purple-500/30 shadow-[0_0_30px_-10px_rgba(168,85,247,0.1)]' 
+                        : 'bg-white/5 border-white/10'
+                    } ${isReadOnly ? 'opacity-75' : ''} hover:border-purple-500/30 group`}
+                  >
+                    <div className="absolute -inset-0.5 bg-gradient-to-r from-purple-600/0 via-pink-600/0 to-cyan-600/0 group-hover:from-purple-600/10 group-hover:via-pink-600/10 group-hover:to-cyan-600/10 rounded-xl transition-all duration-500"></div>
+                    
+                    <div className="relative flex flex-col lg:flex-row lg:items-center justify-between gap-4">
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-2 flex-wrap">
-                          <h3 className="font-semibold text-gray-800">{task.title}</h3>
-                          <span className={`text-xs px-2 py-1 rounded-full flex items-center gap-1 border ${getPriorityColor(task.priority)}`}>
-                            {task.priority}
+                          <h3 className="font-bold text-white font-mono tracking-wide">{task.title}</h3>
+                          <span className={`text-xs px-2.5 py-1 rounded-full flex items-center gap-1 border font-mono tracking-wider ${getPriorityColor(task.priority)}`}>
+                            <Tag className="w-3 h-3" />
+                            {task.priority.toUpperCase()}
                           </span>
-                          <span className={`text-xs px-2 py-1 rounded-full flex items-center gap-1 border ${getStatusColor(task.status)}`}>
+                          <span className={`text-xs px-2.5 py-1 rounded-full flex items-center gap-1 border font-mono tracking-wider ${getStatusColor(task.status)}`}>
                             {getStatusIcon(task.status)}
                             {task.status?.replace('_', ' ') || 'pending'}
                           </span>
                           {isAdmin && (
-                            <span className="text-xs px-2 py-0.5 bg-yellow-100 text-yellow-700 rounded-full flex items-center gap-1">
+                            <span className="text-xs px-2 py-0.5 bg-yellow-500/20 text-yellow-400 border border-yellow-500/30 rounded-full flex items-center gap-1 font-mono">
                               <Crown className="w-3 h-3" />
-                              Admin View
+                              ADMIN
                             </span>
                           )}
                           {!isAdmin && isAssignedToMe && (
-                            <span className="text-xs px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full flex items-center gap-1">
+                            <span className="text-xs px-2 py-0.5 bg-blue-500/20 text-blue-400 border border-blue-500/30 rounded-full flex items-center gap-1 font-mono">
                               <User className="w-3 h-3" />
-                              My Task
+                              MY TASK
                             </span>
                           )}
                           {isReadOnly && (
-                            <span className="text-xs px-2 py-0.5 bg-gray-100 text-gray-500 rounded-full flex items-center gap-1">
+                            <span className="text-xs px-2 py-0.5 bg-gray-500/20 text-gray-400 border border-gray-500/30 rounded-full flex items-center gap-1 font-mono">
                               <Lock className="w-3 h-3" />
-                              Read Only
+                              READ ONLY
                             </span>
                           )}
                         </div>
-                        <p className="text-sm text-gray-500 mb-2">{task.description || 'No description'}</p>
-                        <div className="flex flex-wrap gap-4 text-xs text-gray-500">
+                        <p className="text-sm text-gray-400 font-mono mb-2">{task.description || 'NO DESCRIPTION'}</p>
+                        <div className="flex flex-wrap gap-4 text-xs text-gray-500 font-mono">
                           <span className="flex items-center gap-1">
-                            <User className="w-3 h-3" />
-                            Assigned to: <strong>{task.assignee_name || 'Unassigned'}</strong>
+                            <User className="w-3 h-3 text-purple-400" />
+                            ASSIGNED TO: <strong className="text-gray-300">{task.assignee_name || 'Unassigned'}</strong>
                           </span>
                           {task.due_date && (
                             <span className="flex items-center gap-1">
-                              <Calendar className="w-3 h-3" />
-                              Due: {new Date(task.due_date).toLocaleDateString()}
+                              <Calendar className="w-3 h-3 text-cyan-400" />
+                              DUE: {new Date(task.due_date).toLocaleDateString()}
                               {new Date(task.due_date) < new Date() && task.status !== 'completed' && (
-                                <span className="text-red-500 ml-1">(Overdue)</span>
+                                <span className="text-red-400 ml-1 animate-pulse">(OVERDUE)</span>
                               )}
                             </span>
                           )}
@@ -439,36 +474,36 @@ export const TeamTasksModal: React.FC<TeamTasksModalProps> = ({ teamId, teamName
                           <select
                             value={task.status}
                             onChange={(e) => handleStatusChange(task.id, e.target.value)}
-                            className="text-sm px-2 py-1 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 bg-white"
+                            className="text-sm px-3 py-1.5 bg-black/50 border border-white/10 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500/50 font-mono tracking-wider hover:border-purple-500/30 transition-all duration-300"
                           >
-                            <option value="pending">Pending</option>
-                            <option value="in_progress">In Progress</option>
-                            <option value="completed">Completed</option>
+                            <option value="pending">PENDING</option>
+                            <option value="in_progress">IN PROGRESS</option>
+                            <option value="completed">COMPLETED</option>
                           </select>
                         ) : (
-                          <span className="text-sm px-3 py-1 bg-gray-100 text-gray-500 rounded-lg flex items-center gap-1">
+                          <span className="text-sm px-3 py-1.5 bg-white/5 text-gray-400 rounded-lg flex items-center gap-1 font-mono border border-white/10">
                             <Lock className="w-3 h-3" />
-                            Read Only
+                            READ ONLY
                           </span>
                         )}
 
                         {canEdit && (
                           <button
                             onClick={() => handleEditClick(task)}
-                            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                            className="p-2 hover:bg-purple-500/10 rounded-lg transition-all duration-300 group/btn"
                             title="Edit Task"
                           >
-                            <Edit className="w-4 h-4 text-blue-500" />
+                            <Edit className="w-4 h-4 text-purple-400 group-hover/btn:scale-110 transition-transform" />
                           </button>
                         )}
 
                         {canDelete && (
                           <button
                             onClick={() => handleDeleteTask(task.id)}
-                            className="p-2 hover:bg-red-50 rounded-lg transition-colors"
+                            className="p-2 hover:bg-red-500/10 rounded-lg transition-all duration-300 group/btn"
                             title="Delete Task"
                           >
-                            <Trash2 className="w-4 h-4 text-red-500" />
+                            <Trash2 className="w-4 h-4 text-red-400 group-hover/btn:scale-110 transition-transform" />
                           </button>
                         )}
                       </div>
@@ -481,100 +516,111 @@ export const TeamTasksModal: React.FC<TeamTasksModalProps> = ({ teamId, teamName
         </div>
       </div>
 
+      {/* Create/Edit Form Modal */}
       {(showCreateForm || (editingTask && isAdmin)) && (
-        <div className="fixed inset-0 bg-black/50 z-60 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl w-full max-w-md p-6">
-            <h3 className="text-xl font-semibold text-gray-800 mb-4">
-              {editingTask ? 'Edit Task (Admin Only)' : 'Assign New Task (Admin Only)'}
-            </h3>
-            <form onSubmit={editingTask ? handleUpdateTask : handleCreateTask} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Title *</label>
-                <input
-                  type="text"
-                  value={formData.title}
-                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-                  required
-                  disabled={!isAdmin}
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
-                <textarea
-                  value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  rows={3}
-                  className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-                  disabled={!isAdmin}
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-[9999] flex items-center justify-center p-4">
+          <div className="relative bg-black/90 backdrop-blur-2xl rounded-2xl border border-white/10 w-full max-w-md p-6 shadow-[0_0_80px_-20px_rgba(255,0,255,0.15)] animate-slide-up">
+            <div className="absolute -inset-0.5 bg-gradient-to-r from-purple-600 via-pink-600 to-cyan-600 rounded-2xl blur opacity-20"></div>
+            
+            <div className="relative">
+              <h3 className="text-xl font-bold bg-gradient-to-r from-purple-400 via-pink-400 to-cyan-400 bg-clip-text text-transparent font-mono tracking-wider mb-4 flex items-center gap-2">
+                <Crown className="w-4 h-4 text-yellow-400" />
+                {editingTask ? 'EDIT TASK (ADMIN ONLY)' : 'ASSIGN NEW TASK (ADMIN ONLY)'}
+              </h3>
+              
+              <form onSubmit={editingTask ? handleUpdateTask : handleCreateTask} className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Priority</label>
-                  <select
-                    value={formData.priority}
-                    onChange={(e) => setFormData({ ...formData, priority: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-                    disabled={!isAdmin}
-                  >
-                    <option value="low">Low</option>
-                    <option value="medium">Medium</option>
-                    <option value="high">High</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Due Date</label>
+                  <label className="block text-sm font-mono tracking-wider text-gray-300 mb-2">TITLE <span className="text-purple-400">*</span></label>
                   <input
-                    type="date"
-                    value={formData.due_date}
-                    onChange={handleDateChange}
-                    min={getMinDate()}
-                    className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 ${
-                      dateError ? 'border-red-500' : 'border-gray-200'
-                    }`}
-                    disabled={!isAdmin}
-                  />
-                  {dateError && <p className="text-xs text-red-500 mt-1">{dateError}</p>}
-                </div>
-              </div>
-              {!editingTask && (
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Assign To *</label>
-                  <select
-                    value={formData.assigned_to}
-                    onChange={(e) => setFormData({ ...formData, assigned_to: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                    type="text"
+                    value={formData.title}
+                    onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                    className="w-full px-4 py-2 bg-black/50 border border-white/10 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500 transition-all duration-300 font-mono"
                     required
                     disabled={!isAdmin}
-                  >
-                    <option value="">Select member</option>
-                    {members.map((member) => (
-                      <option key={member.id} value={member.id}>
-                        {member.name} ({member.email}) - {member.role}
-                      </option>
-                    ))}
-                  </select>
+                  />
                 </div>
-              )}
-              <div className="flex gap-3 pt-4">
-                <Button type="submit" variant="primary" disabled={!!dateError || !isAdmin}>
-                  {editingTask ? 'Update Task' : 'Assign Task'}
-                </Button>
-                <Button
-                  type="button"
-                  variant="secondary"
-                  onClick={() => {
-                    setShowCreateForm(false);
-                    setEditingTask(null);
-                    setFormData({ title: '', description: '', priority: 'medium', due_date: '', assigned_to: '' });
-                    setDateError('');
-                  }}
-                >
-                  Cancel
-                </Button>
-              </div>
-            </form>
+                <div>
+                  <label className="block text-sm font-mono tracking-wider text-gray-300 mb-2">DESCRIPTION</label>
+                  <textarea
+                    value={formData.description}
+                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                    rows={3}
+                    className="w-full px-4 py-2 bg-black/50 border border-white/10 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500 transition-all duration-300 font-mono resize-none"
+                    disabled={!isAdmin}
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-mono tracking-wider text-gray-300 mb-2">PRIORITY</label>
+                    <select
+                      value={formData.priority}
+                      onChange={(e) => setFormData({ ...formData, priority: e.target.value })}
+                      className="w-full px-4 py-2 bg-black/50 border border-white/10 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500 transition-all duration-300 font-mono"
+                      disabled={!isAdmin}
+                    >
+                      <option value="low">LOW</option>
+                      <option value="medium">MEDIUM</option>
+                      <option value="high">HIGH</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-mono tracking-wider text-gray-300 mb-2">DUE DATE</label>
+                    <input
+                      type="date"
+                      value={formData.due_date}
+                      onChange={handleDateChange}
+                      min={getMinDate()}
+                      className={`w-full px-4 py-2 bg-black/50 border rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500 transition-all duration-300 font-mono ${
+                        dateError ? 'border-red-500' : 'border-white/10'
+                      }`}
+                      disabled={!isAdmin}
+                    />
+                    {dateError && <p className="text-xs text-red-400 font-mono mt-1">{dateError}</p>}
+                  </div>
+                </div>
+                {!editingTask && (
+                  <div>
+                    <label className="block text-sm font-mono tracking-wider text-gray-300 mb-2">ASSIGN TO <span className="text-purple-400">*</span></label>
+                    <select
+                      value={formData.assigned_to}
+                      onChange={(e) => setFormData({ ...formData, assigned_to: e.target.value })}
+                      className="w-full px-4 py-2 bg-black/50 border border-white/10 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500 transition-all duration-300 font-mono"
+                      required
+                      disabled={!isAdmin}
+                    >
+                      <option value="">SELECT MEMBER</option>
+                      {members.map((member) => (
+                        <option key={member.id} value={member.id} className="bg-black text-white">
+                          {member.name} ({member.email}) - {member.role.toUpperCase()}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+                <div className="flex gap-3 pt-4 border-t border-white/10">
+                  <button 
+                    type="submit" 
+                    disabled={!!dateError || !isAdmin}
+                    className="flex-1 bg-gradient-to-r from-purple-600 via-pink-600 to-cyan-600 text-white font-bold py-2.5 rounded-xl shadow-[0_0_30px_-5px_rgba(168,85,247,0.3)] hover:shadow-[0_0_50px_-5px_rgba(168,85,247,0.5)] transform hover:scale-[1.02] transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center justify-center gap-2 font-mono tracking-wider"
+                  >
+                    {editingTask ? 'UPDATE TASK' : 'ASSIGN TASK'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowCreateForm(false);
+                      setEditingTask(null);
+                      setFormData({ title: '', description: '', priority: 'medium', due_date: '', assigned_to: '' });
+                      setDateError('');
+                    }}
+                    className="flex-1 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-purple-500/30 text-gray-300 hover:text-white font-bold py-2.5 rounded-xl transition-all duration-300 font-mono tracking-wider"
+                  >
+                    CANCEL
+                  </button>
+                </div>
+              </form>
+            </div>
           </div>
         </div>
       )}
