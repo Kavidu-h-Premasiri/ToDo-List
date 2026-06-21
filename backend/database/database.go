@@ -1,3 +1,4 @@
+// backend/database/database.go
 package database
 
 import (
@@ -31,8 +32,19 @@ func ConnectDB() {
 
 	log.Println("Database connected successfully")
 
-	// Auto migrate schemas
-	err = DB.AutoMigrate(&models.User{}, &models.Task{})
+	// Auto migrate all schemas
+	err = DB.AutoMigrate(
+		&models.User{},
+		&models.Task{},
+		&models.Team{},
+		&models.TeamMember{},
+		&models.TeamTask{},
+		&models.Notification{},
+		&models.TaskMention{},
+		&models.Message{},
+		&models.MessageRead{},
+		&models.MessageAttachment{},
+	)
 	if err != nil {
 		log.Fatal("Failed to migrate database:", err)
 	}

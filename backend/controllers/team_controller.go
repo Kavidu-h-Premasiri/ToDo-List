@@ -296,3 +296,108 @@ func RemoveMember(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"message": "Member removed successfully"})
 }
+
+// backend/controllers/team_controller.go
+// Replace the UpdateTeam function with this:
+
+func UpdateTeam(c *gin.Context) {
+	userID, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
+		return
+	}
+
+	teamID, err := strconv.ParseUint(c.Param("id"), 10, 32)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid team ID"})
+		return
+	}
+
+	// Check if user is admin of the team
+	var adminMember models.TeamMember
+	if result := database.DB.Where("team_id = ? AND user_id = ? AND role = ? AND status = ?", uint(teamID), userID, "admin", "active").First(&adminMember); result.Error != nil {
+		c.JSON(http.StatusForbidden, gin.H{"error": "Only team admins can update team details"})
+		return
+	}
+
+	var req models.UpdateTeamRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	// Check if another team with same name exists for this user
+	var existingTeam models.Team
+	if result := database.DB.Where("name = ? AND created_by = ? AND id != ?", req.Name, userID, teamID).First(&existingTeam); result.Error == nil {
+		c.JSON(http.StatusConflict, gin.H{"error": "You already have another team with this name"})
+		return
+	}
+
+	var team models.Team
+	if result := database.DB.First(&team, teamID); result.Error != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Team not found"})
+		return
+	}
+
+	team.Name = req.Name
+	team.Description = req.Description
+
+	if result := database.DB.Save(&team); result.Error != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update team: " + result.Error.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Team updated successfully",
+		"team":    team,
+	})
+}
+
+func DeleteTeam(c *gin.Context) {
+	userID, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
+		return
+	}
+
+	teamID, err := strconv.ParseUint(c.Param("id"), 10, 32)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid team ID"})
+		return
+	}
+
+	// Check if user is admin of the team
+	var adminMember models.TeamMember
+	if result := database.DB.Where("team_id = ? AND user_id = ? AND role = ? AND status = ?", uint(teamID), userID, "admin", "active").First(&adminMember); result.Error != nil {
+		c.JSON(http.StatusForbidden, gin.H{"error": "Only team admins can delete the team"})
+		return
+	}
+
+	// Start transaction
+	tx := database.DB.Begin()
+
+	// Delete all team members
+	if err := tx.Where("team_id = ?", teamID).Delete(&models.TeamMember{}).Error; err != nil {
+		tx.Rollback()
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete team members"})
+		return
+	}
+
+	// Delete team tasks (if any) using raw SQL to avoid depending on a TeamTask model
+	if err := tx.Exec("DELETE FROM team_tasks WHERE team_id = ?", teamID).Error; err != nil {
+		tx.Rollback()
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete team tasks"})
+		return
+	}
+
+	// Delete the team
+	if err := tx.Delete(&models.Team{}, teamID).Error; err != nil {
+		tx.Rollback()
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete team"})
+		return
+	}
+
+	tx.Commit()
+
+	c.JSON(http.StatusOK, gin.H{"message": "Team deleted successfully"})
+}

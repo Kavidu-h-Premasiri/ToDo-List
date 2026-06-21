@@ -1,4 +1,4 @@
-const API_URL = import.meta.env.VITE_API_URL || '/api';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api';
 
 // ============ TYPES ============
 interface User {
@@ -343,6 +343,13 @@ export const teamService = {
 
   removeMember: (teamId: number, memberId: number): Promise<{ message: string }> =>
     apiCall<{ message: string }>(`/teams/${teamId}/members/${memberId}`, 'DELETE'),
+
+  // ADD THESE TWO NEW METHODS:
+  updateTeam: (teamId: number, data: { name: string; description: string }): Promise<{ message: string; team: Team }> =>
+    apiCall<{ message: string; team: Team }>(`/teams/${teamId}`, 'PUT', data),
+
+  deleteTeam: (teamId: number): Promise<{ message: string }> =>
+    apiCall<{ message: string }>(`/teams/${teamId}`, 'DELETE'),
 };
 
 // ============ TEAM TASK SERVICES ============

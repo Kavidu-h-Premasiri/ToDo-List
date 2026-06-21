@@ -1,3 +1,4 @@
+// src/pages/Teams/page.tsx
 import React, { useState, useEffect, useCallback } from 'react';
 import { Sidebar } from '../../components/Layout/Sidebar';
 import { Navbar } from '../../components/Layout/Navbar';
@@ -16,7 +17,8 @@ import {
   Zap,
   Shield,
   User,
-  Calendar
+  Calendar,
+  Edit2
 } from 'lucide-react';
 import { teamService } from '../../services/api';
 import { TeamTasksModal } from '../../components/TeamTasks/TeamTasksModal';
@@ -60,6 +62,13 @@ export const TeamsPage: React.FC = () => {
   const [createLoading, setCreateLoading] = useState<boolean>(false);
   const [error, setError] = useState<string>('');
   const [success, setSuccess] = useState<string>('');
+  
+  // States for edit and delete
+  const [showEditModal, setShowEditModal] = useState<boolean>(false);
+  const [editTeamName, setEditTeamName] = useState<string>('');
+  const [editTeamDesc, setEditTeamDesc] = useState<string>('');
+  const [editLoading, setEditLoading] = useState<boolean>(false);
+  const [deleteLoading, setDeleteLoading] = useState<boolean>(false);
 
   const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
 
@@ -195,6 +204,83 @@ export const TeamsPage: React.FC = () => {
         role: userRole
       });
       setShowTasksModal(true);
+    }
+  };
+
+  // Edit team handlers
+  const handleEditTeam = (): void => {
+    if (selectedTeam) {
+      setEditTeamName(selectedTeam.name);
+      setEditTeamDesc(selectedTeam.description || '');
+      setShowEditModal(true);
+    }
+  };
+
+  const handleUpdateTeam = async (): Promise<void> => {
+    if (!editTeamName.trim()) {
+      setError('Team name is required');
+      return;
+    }
+
+    setEditLoading(true);
+    setError('');
+
+    try {
+      await teamService.updateTeam(selectedTeam!.id, {
+        name: editTeamName,
+        description: editTeamDesc,
+      });
+      setSuccess('Team updated successfully!');
+      setTimeout(() => setSuccess(''), 3000);
+      setShowEditModal(false);
+      
+      // Update the selected team in state
+      if (selectedTeam) {
+        setSelectedTeam({
+          ...selectedTeam,
+          name: editTeamName,
+          description: editTeamDesc
+        });
+      }
+      
+      await fetchTeams();
+    } catch (err) {
+      const apiError = err as ApiError;
+      setError(apiError.message || 'Failed to update team');
+    } finally {
+      setEditLoading(false);
+    }
+  };
+
+  const handleDeleteTeam = async (): Promise<void> => {
+    if (!selectedTeam) return;
+    
+    if (window.confirm(`Are you sure you want to permanently delete "${selectedTeam.name}"? This action cannot be undone.`)) {
+      setDeleteLoading(true);
+      setError('');
+
+      try {
+        await teamService.deleteTeam(selectedTeam.id);
+        setSuccess('Team deleted successfully!');
+        setTimeout(() => setSuccess(''), 3000);
+        
+        // Remove team from list and select another team
+        const updatedTeams = teams.filter(t => t.id !== selectedTeam.id);
+        setTeams(updatedTeams);
+        
+        if (updatedTeams.length > 0) {
+          setSelectedTeam(updatedTeams[0]);
+          await fetchTeamDetails(updatedTeams[0].id);
+        } else {
+          setSelectedTeam(null);
+          setTeamMembers([]);
+        }
+      } catch (err) {
+        const apiError = err as ApiError;
+        setError(apiError.message || 'Failed to delete team');
+      } finally {
+        setDeleteLoading(false);
+      }
     }
   };
 
@@ -356,16 +442,32 @@ export const TeamsPage: React.FC = () => {
                         CREATED: {new Date(selectedTeam.created_at).toLocaleDateString()}
                       </p>
                     </div>
-                    <div className="flex gap-2">
+                    <div className="flex gap-2 flex-wrap">
                       <Button variant="primary" size="sm" onClick={handleViewTasks} className="bg-gradient-to-r from-purple-600 via-pink-600 to-cyan-600 hover:shadow-[0_0_30px_rgba(168,85,247,0.3)] font-mono">
                         <CheckSquare className="w-4 h-4 mr-2" />
                         VIEW TASKS
                       </Button>
                       {userRole === 'admin' && (
-                        <Button variant="secondary" size="sm" onClick={() => setShowInviteModal(true)} className="border border-white/10 hover:border-purple-500/30 font-mono text-gray-300 hover:text-white">
-                          <UserPlus className="w-4 h-4 mr-2" />
-                          INVITE
-                        </Button>
+                        <>
+                          <Button variant="secondary" size="sm" onClick={handleEditTeam} className="border border-white/10 hover:border-purple-500/30 font-mono text-gray-300 hover:text-white">
+                            <Edit2 className="w-4 h-4 mr-2" />
+                            EDIT
+                          </Button>
+                          <Button variant="secondary" size="sm" onClick={() => setShowInviteModal(true)} className="border border-white/10 hover:border-purple-500/30 font-mono text-gray-300 hover:text-white">
+                            <UserPlus className="w-4 h-4 mr-2" />
+                            INVITE
+                          </Button>
+                          <Button variant="secondary" size="sm" onClick={handleDeleteTeam} disabled={deleteLoading} className="border border-red-500/30 hover:border-red-500/60 font-mono text-red-400 hover:text-red-300 hover:bg-red-500/10">
+                            {deleteLoading ? (
+                              <div className="w-4 h-4 border-2 border-red-400/30 border-t-red-400 rounded-full animate-spin"></div>
+                            ) : (
+                              <>
+                                <Trash2 className="w-4 h-4 mr-2" />
+                                DELETE
+                              </>
+                            )}
+                          </Button>
+                        </>
                       )}
                     </div>
                   </div>
@@ -513,7 +615,69 @@ export const TeamsPage: React.FC = () => {
             </>
           )}
 
-          {/* Invite Member Modal - Fixed Centered */}
+          {/* Edit Team Modal */}
+          {showEditModal && (
+            <>
+              <div 
+                className="fixed inset-0 bg-black/70 backdrop-blur-sm z-[9998]" 
+                onClick={() => setShowEditModal(false)} 
+              />
+              <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
+                <div className="w-full max-w-md bg-black/90 backdrop-blur-2xl rounded-2xl border border-white/10 shadow-[0_0_80px_-20px_rgba(255,0,255,0.15)] p-6 animate-slide-up relative">
+                  <div className="absolute -inset-0.5 bg-gradient-to-r from-purple-600 via-pink-600 to-cyan-600 rounded-2xl blur opacity-20"></div>
+                  <div className="relative">
+                    <div className="flex justify-between items-center mb-4">
+                      <h3 className="text-xl font-bold bg-gradient-to-r from-purple-400 via-pink-400 to-cyan-400 bg-clip-text text-transparent font-mono">EDIT TEAM</h3>
+                      <button onClick={() => setShowEditModal(false)} className="p-1 hover:bg-white/5 rounded-lg transition-all duration-300 text-gray-400 hover:text-white">
+                        <X className="w-5 h-5" />
+                      </button>
+                    </div>
+                    
+                    <form onSubmit={(e) => { e.preventDefault(); handleUpdateTeam(); }} className="space-y-4">
+                      <div>
+                        <label className="block text-sm font-mono tracking-wider text-gray-300 mb-2">TEAM NAME <span className="text-purple-400">*</span></label>
+                        <input
+                          type="text"
+                          value={editTeamName}
+                          onChange={(e) => setEditTeamName(e.target.value)}
+                          className="w-full px-4 py-2 bg-black/50 border border-white/10 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500 transition-all duration-300 font-mono"
+                          placeholder="Enter team name..."
+                          required
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-mono tracking-wider text-gray-300 mb-2">DESCRIPTION</label>
+                        <textarea
+                          value={editTeamDesc}
+                          onChange={(e) => setEditTeamDesc(e.target.value)}
+                          rows={3}
+                          className="w-full px-4 py-2 bg-black/50 border border-white/10 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500 transition-all duration-300 font-mono resize-none"
+                          placeholder="Describe what this team does..."
+                        />
+                      </div>
+                      <div className="flex gap-3 pt-4 border-t border-white/10">
+                        <button type="submit" disabled={editLoading} className="flex-1 bg-gradient-to-r from-purple-600 via-pink-600 to-cyan-600 text-white font-bold py-2.5 rounded-xl shadow-[0_0_30px_-5px_rgba(168,85,247,0.3)] hover:shadow-[0_0_50px_-5px_rgba(168,85,247,0.5)] transform hover:scale-[1.02] transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center justify-center gap-2 font-mono tracking-wider">
+                          {editLoading ? (
+                            <>
+                              <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                              UPDATING...
+                            </>
+                          ) : (
+                            'UPDATE TEAM'
+                          )}
+                        </button>
+                        <button type="button" onClick={() => setShowEditModal(false)} className="flex-1 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-purple-500/30 text-gray-300 hover:text-white font-bold py-2.5 rounded-xl transition-all duration-300 font-mono tracking-wider">
+                          CANCEL
+                        </button>
+                      </div>
+                    </form>
+                  </div>
+                </div>
+              </div>
+            </>
+          )}
+
+          {/* Invite Member Modal */}
           {showInviteModal && (
             <>
               <div 

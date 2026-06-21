@@ -1,3 +1,4 @@
+// backend/routes/routes.go
 package routes
 
 import (
@@ -41,18 +42,20 @@ func SetupRoutes(r *gin.Engine) {
 		api.GET("/teams/:id/messages", controllers.GetTeamMessages)
 		api.POST("/teams/:id/messages", controllers.SendMessage)
 		api.PUT("/teams/:id/messages/read", controllers.MarkMessagesAsRead)
-		api.GET("/teams/:id/messages/unread", controllers.GetTeamUnreadCount) // Renamed function
+		api.GET("/teams/:id/messages/unread", controllers.GetTeamUnreadCount)
 		api.GET("/messages/:messageId/file", controllers.DownloadFile)
 
-		// Team routes
+		// ========== TEAM ROUTES ==========
 		api.POST("/teams", controllers.CreateTeam)
 		api.GET("/teams", controllers.GetMyTeams)
 		api.GET("/teams/:id", controllers.GetTeamDetails)
+		api.PUT("/teams/:id", controllers.UpdateTeam)    // ADD THIS
+		api.DELETE("/teams/:id", controllers.DeleteTeam) // ADD THIS
 		api.POST("/teams/:id/invite", controllers.InviteMember)
 		api.PUT("/teams/:id/members/:memberId", controllers.UpdateMemberRole)
 		api.DELETE("/teams/:id/members/:memberId", controllers.RemoveMember)
 
-		// Team Task routes
+		// ========== TEAM TASK ROUTES ==========
 		api.GET("/teams/:id/members", controllers.GetTeamMembersList)
 		api.POST("/teams/:id/tasks", controllers.CreateTeamTask)
 		api.GET("/teams/:id/tasks", controllers.GetTeamTasks)
@@ -62,7 +65,7 @@ func SetupRoutes(r *gin.Engine) {
 		// My tasks
 		api.GET("/my-tasks", controllers.GetMyAssignedTasks)
 
-		// Personal task routes
+		// ========== PERSONAL TASK ROUTES ==========
 		api.POST("/tasks", controllers.CreateTask)
 		api.GET("/tasks", controllers.GetTasks)
 		api.GET("/tasks/stats", controllers.GetTaskStats)

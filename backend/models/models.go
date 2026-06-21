@@ -1,3 +1,4 @@
+// backend/models/models.go
 package models
 
 import (
@@ -59,6 +60,23 @@ type TeamMember struct {
 	User      User           `gorm:"foreignKey:UserID" json:"user,omitempty"`
 }
 
+type TeamTask struct {
+	ID          uint           `gorm:"primaryKey" json:"id"`
+	TeamID      uint           `gorm:"not null" json:"team_id"`
+	Title       string         `gorm:"not null" json:"title"`
+	Description string         `json:"description"`
+	Status      string         `gorm:"default:pending" json:"status"`
+	Priority    string         `gorm:"default:medium" json:"priority"`
+	AssignedTo  uint           `json:"assigned_to"`
+	CreatedBy   uint           `json:"created_by"`
+	DueDate     *time.Time     `json:"due_date"`
+	CreatedAt   time.Time      `json:"created_at"`
+	UpdatedAt   time.Time      `json:"updated_at"`
+	DeletedAt   gorm.DeletedAt `gorm:"index" json:"-"`
+}
+
+// ============ REQUEST STRUCTS ============
+
 type LoginRequest struct {
 	Email    string `json:"email" binding:"required,email"`
 	Password string `json:"password" binding:"required"`
@@ -70,15 +88,13 @@ type RegisterRequest struct {
 	Password string `json:"password" binding:"required,min=6"`
 }
 
-type UpdateTaskRequest struct {
-	Title       *string    `json:"title"`
-	Description *string    `json:"description"`
-	Status      *string    `json:"status"`
-	Priority    *string    `json:"priority"`
-	DueDate     *time.Time `json:"due_date"`
+// Team Request Structs
+type CreateTeamRequest struct {
+	Name        string `json:"name" binding:"required"`
+	Description string `json:"description"`
 }
 
-type CreateTeamRequest struct {
+type UpdateTeamRequest struct {
 	Name        string `json:"name" binding:"required"`
 	Description string `json:"description"`
 }
@@ -92,18 +108,13 @@ type UpdateMemberRoleRequest struct {
 	Role string `json:"role" binding:"required,oneof=admin member"`
 }
 
-type AuthResponse struct {
-	Token string `json:"token"`
-	User  User   `json:"user"`
-}
-
-type ErrorResponse struct {
-	Error string `json:"error"`
-}
-
-type SuccessResponse struct {
-	Message string      `json:"message"`
-	Data    interface{} `json:"data,omitempty"`
+// Task Request Structs
+type UpdateTaskRequest struct {
+	Title       *string    `json:"title"`
+	Description *string    `json:"description"`
+	Status      *string    `json:"status"`
+	Priority    *string    `json:"priority"`
+	DueDate     *time.Time `json:"due_date"`
 }
 
 type AssignTaskRequest struct {
@@ -119,7 +130,24 @@ type TeamTaskRequest struct {
 	AssignedTo  uint       `json:"assigned_to" binding:"required"`
 }
 
+// ============ RESPONSE STRUCTS ============
+
+type AuthResponse struct {
+	Token string `json:"token"`
+	User  User   `json:"user"`
+}
+
+type ErrorResponse struct {
+	Error string `json:"error"`
+}
+
+type SuccessResponse struct {
+	Message string      `json:"message"`
+	Data    interface{} `json:"data,omitempty"`
+}
+
 // ============ NOTIFICATION MODELS ============
+
 type Notification struct {
 	ID        uint           `gorm:"primaryKey" json:"id"`
 	UserID    uint           `gorm:"not null" json:"user_id"`
@@ -146,6 +174,7 @@ type TaskMention struct {
 }
 
 // ============ MESSAGE MODELS ============
+
 type Message struct {
 	ID          uint                `gorm:"primaryKey" json:"id"`
 	TeamID      uint                `gorm:"not null" json:"team_id"`
@@ -166,7 +195,6 @@ type Message struct {
 	Attachments []MessageAttachment `gorm:"foreignKey:MessageID" json:"attachments,omitempty"`
 }
 
-// MessageRead - Tracks who has read which messages
 type MessageRead struct {
 	ID        uint      `gorm:"primaryKey" json:"id"`
 	MessageID uint      `gorm:"not null" json:"message_id"`
