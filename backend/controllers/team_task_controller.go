@@ -1,3 +1,4 @@
+// backend/controllers/team_task_controller.go
 package controllers
 
 import (
@@ -9,46 +10,6 @@ import (
 
 	"github.com/gin-gonic/gin"
 )
-
-// GetTeamMembersList - Get list of team members for assignment
-func GetTeamMembersList(c *gin.Context) {
-	userID, exists := c.Get("userID")
-	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
-		return
-	}
-
-	teamID, err := strconv.ParseUint(c.Param("id"), 10, 32)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid team ID"})
-		return
-	}
-
-	var member models.TeamMember
-	if result := database.DB.Where("team_id = ? AND user_id = ? AND status = ?", uint(teamID), userID, "active").First(&member); result.Error != nil {
-		c.JSON(http.StatusForbidden, gin.H{"error": "You don't have access to this team"})
-		return
-	}
-
-	var members []models.TeamMember
-	database.DB.Preload("User").Where("team_id = ? AND status = ?", uint(teamID), "active").Find(&members)
-
-	memberList := make([]gin.H, 0)
-	for _, m := range members {
-		memberData := gin.H{
-			"id":    m.User.ID,
-			"name":  m.User.Name,
-			"email": m.User.Email,
-			"role":  m.Role,
-		}
-		memberList = append(memberList, memberData)
-	}
-
-	c.JSON(http.StatusOK, gin.H{
-		"members":   memberList,
-		"user_role": member.Role,
-	})
-}
 
 // CreateTeamTask - ONLY ADMIN can create tasks
 func CreateTeamTask(c *gin.Context) {

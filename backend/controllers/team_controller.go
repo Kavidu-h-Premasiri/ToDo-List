@@ -1,3 +1,4 @@
+// backend/controllers/team_controller.go
 package controllers
 
 import (
@@ -5,8 +6,10 @@ import (
 	"backend/models"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 )
 
 func CreateTeam(c *gin.Context) {
@@ -154,6 +157,7 @@ func InviteMember(c *gin.Context) {
 		return
 	}
 
+	// Check if current user is admin
 	var adminMember models.TeamMember
 	if result := database.DB.Where("team_id = ? AND user_id = ? AND role = ? AND status = ?", uint(teamID), userID, "admin", "active").First(&adminMember); result.Error != nil {
 		c.JSON(http.StatusForbidden, gin.H{"error": "Only team admins can invite members"})
@@ -169,27 +173,55 @@ func InviteMember(c *gin.Context) {
 	var invitedUser models.User
 	userExists := database.DB.Where("email = ?", req.Email).First(&invitedUser).Error == nil
 
-	var invitedUserID uint
-	if userExists {
-		invitedUserID = invitedUser.ID
+	if !userExists {
+		c.JSON(http.StatusNotFound, gin.H{"error": "User with this email does not exist"})
+		return
+	}
 
-		var existingMember models.TeamMember
-		if database.DB.Where("team_id = ? AND user_id = ?", uint(teamID), invitedUserID).First(&existingMember).Error == nil {
-			c.JSON(http.StatusConflict, gin.H{"error": "User is already a member of this team"})
+	// Check if user already has a record (including soft-deleted)
+	var existingMember models.TeamMember
+	result := database.DB.Unscoped().Where("team_id = ? AND user_id = ?", uint(teamID), invitedUser.ID).First(&existingMember)
+
+	if result.Error == nil {
+		// If user is already active, return error
+		if existingMember.Status == "active" {
+			c.JSON(http.StatusConflict, gin.H{"error": "User is already an active member of this team"})
+			return
+		}
+
+		// If member was removed, reactivate them
+		if existingMember.Status == "removed" {
+			// Update the existing record
+			existingMember.Status = "active"
+			existingMember.Role = req.Role
+			existingMember.InvitedBy = userID.(uint)
+			existingMember.DeletedAt = gorm.DeletedAt{} // Clear soft delete
+
+			// Use Unscoped() to update including soft-deleted records
+			if result := database.DB.Unscoped().Save(&existingMember); result.Error != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to reactivate member: " + result.Error.Error()})
+				return
+			}
+
+			c.JSON(http.StatusOK, gin.H{
+				"message": "Member reactivated successfully",
+				"member": gin.H{
+					"email":  req.Email,
+					"role":   req.Role,
+					"status": "active",
+				},
+			})
 			return
 		}
 	}
 
+	// Create new team member
 	teamMember := models.TeamMember{
 		TeamID:    uint(teamID),
-		UserID:    invitedUserID,
+		UserID:    invitedUser.ID,
 		Role:      req.Role,
 		Status:    "active",
 		InvitedBy: userID.(uint),
-	}
-
-	if !userExists {
-		teamMember.Status = "pending"
 	}
 
 	if result := database.DB.Create(&teamMember); result.Error != nil {
@@ -197,17 +229,12 @@ func InviteMember(c *gin.Context) {
 		return
 	}
 
-	message := "Invitation sent successfully"
-	if userExists {
-		message = "Member added successfully"
-	}
-
 	c.JSON(http.StatusOK, gin.H{
-		"message": message,
+		"message": "Member added successfully",
 		"member": gin.H{
 			"email":  req.Email,
 			"role":   req.Role,
-			"status": teamMember.Status,
+			"status": "active",
 		},
 	})
 }
@@ -232,7 +259,7 @@ func UpdateMemberRole(c *gin.Context) {
 	}
 
 	var adminMember models.TeamMember
-	if result := database.DB.Where("team_id = ? AND user_id = ? AND role = ?", uint(teamID), userID, "admin").First(&adminMember); result.Error != nil {
+	if result := database.DB.Where("team_id = ? AND user_id = ? AND role = ? AND status = ?", uint(teamID), userID, "admin", "active").First(&adminMember); result.Error != nil {
 		c.JSON(http.StatusForbidden, gin.H{"error": "Only team admins can update roles"})
 		return
 	}
@@ -244,8 +271,8 @@ func UpdateMemberRole(c *gin.Context) {
 	}
 
 	var member models.TeamMember
-	if result := database.DB.Where("team_id = ? AND user_id = ?", uint(teamID), uint(memberID)).First(&member); result.Error != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Member not found"})
+	if result := database.DB.Where("team_id = ? AND user_id = ? AND status = ?", uint(teamID), uint(memberID), "active").First(&member); result.Error != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Member not found or not active"})
 		return
 	}
 
@@ -277,28 +304,44 @@ func RemoveMember(c *gin.Context) {
 		return
 	}
 
+	// Check if current user is admin
 	var adminMember models.TeamMember
-	if result := database.DB.Where("team_id = ? AND user_id = ? AND role = ?", uint(teamID), userID, "admin").First(&adminMember); result.Error != nil {
+	if result := database.DB.Where("team_id = ? AND user_id = ? AND role = ? AND status = ?", uint(teamID), userID, "admin", "active").First(&adminMember); result.Error != nil {
 		c.JSON(http.StatusForbidden, gin.H{"error": "Only team admins can remove members"})
 		return
 	}
 
+	// Prevent removing yourself
 	if userID == uint(memberID) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "You cannot remove yourself from the team"})
 		return
 	}
 
-	result := database.DB.Where("team_id = ? AND user_id = ?", uint(teamID), uint(memberID)).Delete(&models.TeamMember{})
-	if result.RowsAffected == 0 {
+	// Find the member (including soft-deleted ones)
+	var member models.TeamMember
+	if result := database.DB.Unscoped().Where("team_id = ? AND user_id = ?", uint(teamID), uint(memberID)).First(&member); result.Error != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Member not found"})
+		return
+	}
+
+	// If already removed, return error
+	if member.Status == "removed" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Member is already removed from this team"})
+		return
+	}
+
+	// Soft delete by updating status
+	member.Status = "removed"
+	member.DeletedAt = gorm.DeletedAt{Time: time.Now(), Valid: true}
+
+	// Use Unscoped() to update including soft-deleted records
+	if result := database.DB.Unscoped().Save(&member); result.Error != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to remove member: " + result.Error.Error()})
 		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "Member removed successfully"})
 }
-
-// backend/controllers/team_controller.go
-// Replace the UpdateTeam function with this:
 
 func UpdateTeam(c *gin.Context) {
 	userID, exists := c.Get("userID")
@@ -376,21 +419,21 @@ func DeleteTeam(c *gin.Context) {
 	// Start transaction
 	tx := database.DB.Begin()
 
-	// Delete all team members
+	// Soft delete all team members
 	if err := tx.Where("team_id = ?", teamID).Delete(&models.TeamMember{}).Error; err != nil {
 		tx.Rollback()
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete team members"})
 		return
 	}
 
-	// Delete team tasks (if any) using raw SQL to avoid depending on a TeamTask model
+	// Delete team tasks
 	if err := tx.Exec("DELETE FROM team_tasks WHERE team_id = ?", teamID).Error; err != nil {
 		tx.Rollback()
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete team tasks"})
 		return
 	}
 
-	// Delete the team
+	// Soft delete the team
 	if err := tx.Delete(&models.Team{}, teamID).Error; err != nil {
 		tx.Rollback()
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete team"})
@@ -400,4 +443,46 @@ func DeleteTeam(c *gin.Context) {
 	tx.Commit()
 
 	c.JSON(http.StatusOK, gin.H{"message": "Team deleted successfully"})
+}
+
+func GetTeamMembersList(c *gin.Context) {
+	userID, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
+		return
+	}
+
+	teamID, err := strconv.ParseUint(c.Param("id"), 10, 32)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid team ID"})
+		return
+	}
+
+	// Check if user is a member of the team
+	var member models.TeamMember
+	if result := database.DB.Where("team_id = ? AND user_id = ? AND status = ?", uint(teamID), userID, "active").First(&member); result.Error != nil {
+		c.JSON(http.StatusForbidden, gin.H{"error": "You don't have access to this team"})
+		return
+	}
+
+	var members []models.TeamMember
+	database.DB.Preload("User").Where("team_id = ? AND status = ?", teamID, "active").Find(&members)
+
+	memberList := make([]gin.H, 0)
+	for _, m := range members {
+		memberData := gin.H{
+			"id":            m.User.ID,
+			"name":          m.User.Name,
+			"email":         m.User.Email,
+			"role":          m.Role,
+			"joined_at":     m.CreatedAt,
+			"profile_photo": m.User.ProfilePhoto,
+		}
+		memberList = append(memberList, memberData)
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"members":   memberList,
+		"user_role": member.Role,
+	})
 }
