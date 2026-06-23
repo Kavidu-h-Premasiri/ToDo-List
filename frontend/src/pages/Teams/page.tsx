@@ -483,7 +483,11 @@ export const TeamsPage: React.FC = () => {
                           <div className="flex items-center gap-4">
                             <div className="w-10 h-10 rounded-xl overflow-hidden bg-gradient-to-r from-purple-600 via-pink-600 to-cyan-600 flex items-center justify-center text-white font-bold shadow-[0_0_20px_rgba(168,85,247,0.2)]">
                               {member.profile_photo ? (
-                                <img src={`import.meta.env.VITE_API_URL/${member.profile_photo}`} alt={member.name} className="w-full h-full object-cover" />
+                                <img 
+                                  src={`${(import.meta.env.VITE_API_URL || '').replace(/\/api$/, '')}${member.profile_photo.startsWith('/') ? member.profile_photo : `/${member.profile_photo}`}`} 
+                                  alt={member.name} 
+                                  className="w-full h-full object-cover" 
+                                />
                               ) : (
                                 member.name?.charAt(0) || 'U'
                               )}
