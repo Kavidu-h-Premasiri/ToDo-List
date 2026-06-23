@@ -6,7 +6,7 @@ phases:
       golang: 1.24
       nodejs: 22
     commands:
-      - echo Installing dependencies...
+      - echo Installing frontend dependencies...
       - cd frontend
       - npm install
       - cd ..
@@ -33,7 +33,7 @@ phases:
   post_build:
     commands:
       - echo Deploying frontend to S3...
-      - aws s3 sync frontend/dist/ s3://$S3_BUCKET/ --acl public-read --delete
+      - aws s3 sync frontend/dist/ s3://$S3_BUCKET/ --delete
       - echo Deployment complete!
 
 artifacts:
@@ -43,5 +43,5 @@ artifacts:
 
 cache:
   paths:
-    - 'frontend/node_modules/**/*'
-    - '/root/.cache/go/**/*'
+    - frontend/node_modules/**/*
+    - /go/pkg/mod/**/*
