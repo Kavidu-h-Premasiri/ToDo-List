@@ -1,3 +1,4 @@
+// backend/controllers/message_controller.go
 package controllers
 
 import (
@@ -12,6 +13,16 @@ import (
 
 	"github.com/gin-gonic/gin"
 )
+
+// GetSriLankaTime returns current time in Sri Lanka timezone (UTC+5:30)
+func GetSriLankaTime() time.Time {
+	loc, err := time.LoadLocation("Asia/Colombo")
+	if err != nil {
+		// Fallback to UTC+5:30 if location not found
+		return time.Now().UTC().Add(5*time.Hour + 30*time.Minute)
+	}
+	return time.Now().In(loc)
+}
 
 // SendMessage - Send a message with optional file attachment
 func SendMessage(c *gin.Context) {
@@ -66,7 +77,6 @@ func SendMessage(c *gin.Context) {
 
 		// Create upload directory if not exists
 		uploadDir := "uploads/messages"
-		// Create directory (handled by os package)
 
 		// Generate unique filename
 		filename := fmt.Sprintf("%d_%d%s", time.Now().UnixNano(), userID, ext)
@@ -84,16 +94,21 @@ func SendMessage(c *gin.Context) {
 		fileSize = file.Size
 	}
 
-	// Create message
+	// Get current Sri Lanka time
+	sriLankaTime := GetSriLankaTime()
+
+	// Create message with Sri Lanka time
 	message := models.Message{
-		TeamID:   uint(teamID),
-		SenderID: userID.(uint),
-		Content:  content,
-		FileURL:  fileURL,
-		FileName: fileName,
-		FileType: fileType,
-		FileSize: fileSize,
-		IsRead:   false,
+		TeamID:    uint(teamID),
+		SenderID:  userID.(uint),
+		Content:   content,
+		FileURL:   fileURL,
+		FileName:  fileName,
+		FileType:  fileType,
+		FileSize:  fileSize,
+		IsRead:    false,
+		CreatedAt: sriLankaTime,
+		UpdatedAt: sriLankaTime,
 	}
 
 	if result := database.DB.Create(&message); result.Error != nil {
@@ -146,13 +161,31 @@ func SendMessage(c *gin.Context) {
 		}
 	}()
 
+	// Return message with formatted Sri Lanka time
 	c.JSON(http.StatusCreated, gin.H{
 		"message": "Message sent successfully",
-		"data":    message,
+		"data": gin.H{
+			"id":         message.ID,
+			"team_id":    message.TeamID,
+			"sender_id":  message.SenderID,
+			"content":    message.Content,
+			"file_url":   message.FileURL,
+			"file_name":  message.FileName,
+			"file_type":  message.FileType,
+			"file_size":  message.FileSize,
+			"is_read":    message.IsRead,
+			"created_at": message.CreatedAt.Format("2006-01-02 15:04:05"),
+			"updated_at": message.UpdatedAt.Format("2006-01-02 15:04:05"),
+			"sender": gin.H{
+				"id":    sender.ID,
+				"name":  sender.Name,
+				"email": sender.Email,
+			},
+		},
 	})
 }
 
-// GetTeamMessages - Get messages for a team
+// GetTeamMessages - Get messages for a team with Sri Lanka time
 func GetTeamMessages(c *gin.Context) {
 	userID, exists := c.Get("userID")
 	if !exists {
@@ -189,6 +222,7 @@ func GetTeamMessages(c *gin.Context) {
 
 	// Mark messages as read (for the current user)
 	go func() {
+		sriLankaTime := GetSriLankaTime()
 		var unreadMessages []models.Message
 		database.DB.Where("team_id = ?", uint(teamID)).Find(&unreadMessages)
 
@@ -200,15 +234,41 @@ func GetTeamMessages(c *gin.Context) {
 				read := models.MessageRead{
 					MessageID: msg.ID,
 					UserID:    userID.(uint),
-					ReadAt:    time.Now(),
+					ReadAt:    sriLankaTime,
 				}
 				database.DB.Create(&read)
 			}
 		}
 	}()
 
+	// Format messages with Sri Lanka time
+	formattedMessages := make([]gin.H, 0)
+	for _, msg := range messages {
+		formattedMsg := gin.H{
+			"id":         msg.ID,
+			"team_id":    msg.TeamID,
+			"sender_id":  msg.SenderID,
+			"content":    msg.Content,
+			"file_url":   msg.FileURL,
+			"file_name":  msg.FileName,
+			"file_type":  msg.FileType,
+			"file_size":  msg.FileSize,
+			"is_read":    msg.IsRead,
+			"created_at": msg.CreatedAt.Format("2006-01-02 15:04:05"),
+			"updated_at": msg.UpdatedAt.Format("2006-01-02 15:04:05"),
+		}
+		if msg.Sender.ID != 0 {
+			formattedMsg["sender"] = gin.H{
+				"id":    msg.Sender.ID,
+				"name":  msg.Sender.Name,
+				"email": msg.Sender.Email,
+			}
+		}
+		formattedMessages = append(formattedMessages, formattedMsg)
+	}
+
 	c.JSON(http.StatusOK, gin.H{
-		"messages": messages,
+		"messages": formattedMessages,
 		"total":    total,
 		"page":     page,
 		"limit":    limit,
@@ -240,7 +300,7 @@ func MarkMessagesAsRead(c *gin.Context) {
 	var messages []models.Message
 	database.DB.Where("team_id = ?", uint(teamID)).Find(&messages)
 
-	now := time.Now()
+	sriLankaTime := GetSriLankaTime()
 	for _, msg := range messages {
 		var existingRead models.MessageRead
 		result := database.DB.Where("message_id = ? AND user_id = ?", msg.ID, userID).First(&existingRead)
@@ -249,7 +309,7 @@ func MarkMessagesAsRead(c *gin.Context) {
 			read := models.MessageRead{
 				MessageID: msg.ID,
 				UserID:    userID.(uint),
-				ReadAt:    now,
+				ReadAt:    sriLankaTime,
 			}
 			database.DB.Create(&read)
 		}

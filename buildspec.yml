@@ -1,0 +1,32 @@
+version: 0.2
+
+phases:
+  install:
+    runtime-versions:
+      golang: 1.25
+      nodejs: 24
+
+  pre_build:
+    commands:
+      - echo Installing frontend dependencies...
+      - cd frontend
+      - npm install
+      - cd ..
+
+  build:
+    commands:
+      - echo Building frontend...
+      - cd frontend
+      - npm run build
+      - cd ..
+
+      - echo Building backend...
+      - cd backend
+      - go mod download
+      - go build -o main .
+      - cd ..
+
+artifacts:
+  files:
+    - '**/*'
+  discard-paths: no

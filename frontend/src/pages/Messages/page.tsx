@@ -1,3 +1,4 @@
+// src/pages/Messages/page.tsx
 import React, { useState, useEffect, useRef } from 'react';
 import { Sidebar } from '../../components/Layout/Sidebar';
 import { Navbar } from '../../components/Layout/Navbar';
@@ -39,6 +40,7 @@ interface ChatMessage {
     email: string;
   };
   created_at: string;
+  updated_at?: string;
 }
 
 export const MessagesPage: React.FC = () => {
@@ -55,6 +57,72 @@ export const MessagesPage: React.FC = () => {
   const inputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
+
+  // Format time in Sri Lanka timezone (UTC+5:30)
+  const formatSriLankaTime = (date: Date): string => {
+    const now = new Date();
+    const diff = now.getTime() - date.getTime();
+    const diffDays = Math.floor(diff / (1000 * 60 * 60 * 24));
+    
+    // Format time in Sri Lanka timezone
+    const options: Intl.DateTimeFormatOptions = {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true,
+      timeZone: 'Asia/Colombo'
+    };
+    
+    // If today, show time only
+    if (diffDays === 0) {
+      return date.toLocaleTimeString('en-US', options);
+    }
+    
+    // If yesterday, show "Yesterday" with time
+    if (diffDays === 1) {
+      return `Yesterday ${date.toLocaleTimeString('en-US', options)}`;
+    }
+    
+    // If within 7 days, show day with time
+    if (diffDays < 7) {
+      return date.toLocaleDateString('en-US', { 
+        weekday: 'short',
+        timeZone: 'Asia/Colombo'
+      }) + ' ' + date.toLocaleTimeString('en-US', options);
+    }
+    
+    // Older messages show full date with time
+    return date.toLocaleDateString('en-US', { 
+      month: 'short', 
+      day: 'numeric',
+      timeZone: 'Asia/Colombo'
+    }) + ' ' + date.toLocaleTimeString('en-US', options);
+  };
+
+  const formatTime = (dateString: string): string => {
+    // Parse the date string
+    const date = new Date(dateString);
+    
+    // If the date is invalid or not in Sri Lanka timezone, try to parse it differently
+    if (isNaN(date.getTime())) {
+      // Try parsing as Sri Lanka time (YYYY-MM-DD HH:MM:SS)
+      const parts = dateString.split(/[- :]/);
+      if (parts.length >= 6) {
+        // Create date with Sri Lanka timezone offset
+        const year = parseInt(parts[0]);
+        const month = parseInt(parts[1]) - 1;
+        const day = parseInt(parts[2]);
+        const hours = parseInt(parts[3]);
+        const minutes = parseInt(parts[4]);
+        const seconds = parseInt(parts[5]);
+        // Sri Lanka is UTC+5:30
+        const sriLankaDate = new Date(Date.UTC(year, month, day, hours - 5, minutes - 30, seconds));
+        return formatSriLankaTime(sriLankaDate);
+      }
+      return dateString;
+    }
+    
+    return formatSriLankaTime(date);
+  };
 
   // Scroll to bottom function
   const scrollToBottom = (): void => {
@@ -196,21 +264,6 @@ export const MessagesPage: React.FC = () => {
       setError(errorMessage);
     } finally {
       setSending(false);
-    }
-  };
-
-  const formatTime = (dateString: string): string => {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diff = now.getTime() - date.getTime();
-    const diffHours = Math.floor(diff / (1000 * 60 * 60));
-    
-    if (diffHours < 1) {
-      return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    } else if (diffHours < 24) {
-      return `${diffHours}h ago`;
-    } else {
-      return date.toLocaleDateString([], { month: 'short', day: 'numeric' });
     }
   };
 
