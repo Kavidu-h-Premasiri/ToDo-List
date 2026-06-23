@@ -253,16 +253,16 @@ export const MessagesPage: React.FC = () => {
       }
 
       await messageService.sendMessage(selectedTeamId, formData);
-      NewMessage('');
-      RemoveFile();
-      Await fetchMessages(selectedTeamId);
-      Await fetchChats();
-      InputRef.current?.focus();
+      setNewMessage('');
+      removeFile();
+      await fetchMessages(selectedTeamId);
+      await fetchChats();
+      inputRef.current?.focus();
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to send message';
-      SetError(errorMessage);
+      setError(errorMessage);
     } finally {
-      SetSending(false);
+      setSending(false);
     }
   };
 
