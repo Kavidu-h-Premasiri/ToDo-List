@@ -14,12 +14,20 @@ import (
 var DB *gorm.DB
 
 func ConnectDB() {
-	dsn := "host=" + os.Getenv("DB_HOST") +
-		" user=" + os.Getenv("DB_USER") +
-		" password=" + os.Getenv("DB_PASSWORD") +
-		" dbname=" + os.Getenv("DB_NAME") +
-		" port=" + os.Getenv("DB_PORT") +
-		" sslmode=disable TimeZone=UTC"
+	var dsn string
+
+	// Cloud එකේදී Render/Neon මඟින් දෙන DATABASE_URL එක තියෙනවද බලනවා
+	if cloudURL := os.Getenv("DATABASE_URL"); cloudURL != "" {
+		dsn = cloudURL
+	} else {
+		// DATABASE_URL එක නැත්නම් (Local එකේදී) ඔයාගේ කලින් DSN එකම පාවිච්චි කරනවා
+		dsn = "host=" + os.Getenv("DB_HOST") +
+			" user=" + os.Getenv("DB_USER") +
+			" password=" + os.Getenv("DB_PASSWORD") +
+			" dbname=" + os.Getenv("DB_NAME") +
+			" port=" + os.Getenv("DB_PORT") +
+			" sslmode=disable TimeZone=UTC"
+	}
 
 	var err error
 	DB, err = gorm.Open(postgres.Open(dsn), &gorm.Config{
