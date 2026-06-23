@@ -1,4 +1,3 @@
-// src/pages/Messages/page.tsx
 import React, { useState, useEffect, useRef } from 'react';
 import { Sidebar } from '../../components/Layout/Sidebar';
 import { Navbar } from '../../components/Layout/Navbar';
@@ -254,16 +253,16 @@ export const MessagesPage: React.FC = () => {
       }
 
       await messageService.sendMessage(selectedTeamId, formData);
-      setNewMessage('');
-      removeFile();
-      await fetchMessages(selectedTeamId);
-      await fetchChats();
-      inputRef.current?.focus();
+      NewMessage('');
+      RemoveFile();
+      Await fetchMessages(selectedTeamId);
+      Await fetchChats();
+      InputRef.current?.focus();
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to send message';
-      setError(errorMessage);
+      SetError(errorMessage);
     } finally {
-      setSending(false);
+      SetSending(false);
     }
   };
 
@@ -463,13 +462,13 @@ export const MessagesPage: React.FC = () => {
                                     {message.file_type.startsWith('image/') ? (
                                       <div className="relative group">
                                         <img 
-                                          src={`import.meta.env.VITE_API_URL${message.file_url}`}
+                                          src={`${import.meta.env.VITE_API_URL}${message.file_url}`}
                                           alt={message.file_name}
                                           className="max-w-xs max-h-48 rounded-lg cursor-pointer hover:opacity-90 transition border border-white/10"
-                                          onClick={() => window.open(`import.meta.env.VITE_API_URL${message.file_url}`, '_blank')}
+                                          onClick={() => window.open(`${import.meta.env.VITE_API_URL}${message.file_url}`, '_blank')}
                                         />
                                         <a
-                                          href={`import.meta.env.VITE_API_URL${message.file_url}`}
+                                          href={`${import.meta.env.VITE_API_URL}${message.file_url}`}
                                           download={message.file_name}
                                           className="absolute top-2 right-2 p-1.5 bg-black/70 backdrop-blur-sm rounded-full opacity-0 group-hover:opacity-100 transition text-white hover:scale-110"
                                         >
@@ -484,7 +483,7 @@ export const MessagesPage: React.FC = () => {
                                           <p className="text-xs text-gray-400 font-mono">{formatFileSize(message.file_size)}</p>
                                         </div>
                                         <a
-                                          href={`import.meta.env.VITE_API_URL${message.file_url}`}
+                                          href={`${import.meta.env.VITE_API_URL}${message.file_url}`}
                                           download={message.file_name}
                                           className="p-1.5 hover:bg-white/10 rounded-lg transition text-gray-400 hover:text-white"
                                         >
