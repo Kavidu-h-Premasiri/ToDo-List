@@ -16,49 +16,59 @@ export const ProfilePage: React.FC = () => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [profilePhoto, setProfilePhoto] = useState<string | null>(null);
-  const [userData, setUserData] = useState({
-    id: 0,
-    name: '',
-    email: '',
-    created_at: ''
+  const [userData, setUserData] = useState(() => {
+    const savedUser = localStorage.getItem('user');
+    if (savedUser) {
+      return JSON.parse(savedUser);
+    }
+    return {
+      id: 0,
+      name: '',
+      email: '',
+      created_at: ''
+    };
   });
-  const [formData, setFormData] = useState({
-    name: '',
-    email: '',
+  const [formData, setFormData] = useState(() => {
+    const savedUser = localStorage.getItem('user');
+    if (savedUser) {
+      const user = JSON.parse(savedUser);
+      return {
+        name: user.name || '',
+        email: user.email || '',
+      };
+    }
+    return {
+      name: '',
+      email: '',
+    };
   });
   
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    loadUserData();
+    let isMounted = true;
+
+    const loadProfilePhoto = async () => {
+      try {
+        const response = await authService.getProfilePhoto();
+        if (isMounted && response && response.profile_photo) {
+          // API URL එකෙන් /api කොටස ඉවත් කරලා ෆොටෝ එකේ සැබෑ URL එක සකස් කිරීම
+          const baseUrl = (import.meta.env.VITE_API_URL || '').replace(/\/api$/, '');
+          const photoPath = response.profile_photo.startsWith('/') ? response.profile_photo : `/${response.profile_photo}`;
+          setProfilePhoto(`${baseUrl}${photoPath}`);
+        }
+      } catch (err) {
+        console.error('Error loading profile photo:', err);
+      }
+    };
+
     loadProfilePhoto();
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
-  const loadUserData = () => {
-    const savedUser = localStorage.getItem('user');
-    if (savedUser) {
-      const user = JSON.parse(savedUser);
-      setUserData(user);
-      setFormData({
-        name: user.name || '',
-        email: user.email || '',
-      });
-    }
-  };
-
-  const loadProfilePhoto = async () => {
-    try {
-      const response = await authService.getProfilePhoto();
-      if (response && response.profile_photo) {
-        // API URL එකෙන් /api කොටස ඉවත් කරලා ෆොටෝ එකේ සැබෑ URL එක සකස් කිරීම
-        const baseUrl = (import.meta.env.VITE_API_URL || '').replace(/\/api$/, '');
-        const photoPath = response.profile_photo.startsWith('/') ? response.profile_photo : `/${response.profile_photo}`;
-        setProfilePhoto(`${baseUrl}${photoPath}`);
-      }
-    } catch (err) {
-      console.error('Error loading profile photo:', err);
-    }
-  };
 
   const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -134,6 +144,23 @@ export const ProfilePage: React.FC = () => {
     setSuccess('');
     
     try {
+      const apiUrl = import.meta.env.VITE_API_URL || '';
+      const token = localStorage.getItem('token');
+
+      const response = await fetch(`${apiUrl}/user`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify(formData),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Failed to update profile');
+      }
+
       const updatedUser = { ...userData, ...formData };
       localStorage.setItem('user', JSON.stringify(updatedUser));
       setUserData(updatedUser);
