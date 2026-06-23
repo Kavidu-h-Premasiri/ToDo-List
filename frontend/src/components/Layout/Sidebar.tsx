@@ -33,9 +33,13 @@ export const Sidebar: React.FC = () => {
         try {
           const parsedUser = JSON.parse(userData);
           setUser(parsedUser);
+          
           // Only set profile photo if it exists and is not empty
           if (parsedUser.profile_photo && parsedUser.profile_photo !== '') {
-            setProfilePhoto(`import.meta.env.VITE_API_URL/${parsedUser.profile_photo}`);
+            // API URL එකෙන් /api කොටස ඉවත් කරලා ෆොටෝ එකේ සැබෑ URL එක සකස් කිරීම
+            const baseUrl = (import.meta.env.VITE_API_URL || '').replace(/\/api$/, '');
+            const photoPath = parsedUser.profile_photo.startsWith('/') ? parsedUser.profile_photo : `/${parsedUser.profile_photo}`;
+            setProfilePhoto(`${baseUrl}${photoPath}`);
           } else {
             setProfilePhoto(null);
           }

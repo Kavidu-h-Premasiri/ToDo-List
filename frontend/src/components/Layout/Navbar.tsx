@@ -33,7 +33,15 @@ export const Navbar: React.FC = () => {
     setPhotoError(true);
   };
 
-  const profilePhoto = user.profile_photo ? `import.meta.env.VITE_API_URL/${user.profile_photo}` : null;
+  // API URL එකෙන් /api කෑල්ල අයින් කරලා, photo path එක නිවැරදිව සම්බන්ධ කිරීම
+  const getProfilePhotoUrl = () => {
+    if (!user.profile_photo) return null;
+    const baseUrl = (import.meta.env.VITE_API_URL || '').replace(/\/api$/, '');
+    const photoPath = user.profile_photo.startsWith('/') ? user.profile_photo : `/${user.profile_photo}`;
+    return `${baseUrl}${photoPath}`;
+  };
+
+  const profilePhoto = getProfilePhotoUrl();
 
   return (
     <nav className="bg-black/80 backdrop-blur-xl border-b border-white/10 px-4 sm:px-6 py-4 sticky top-0 z-40 relative overflow-visible">

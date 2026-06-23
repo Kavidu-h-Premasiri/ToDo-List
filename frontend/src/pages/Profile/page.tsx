@@ -50,7 +50,10 @@ export const ProfilePage: React.FC = () => {
     try {
       const response = await authService.getProfilePhoto();
       if (response && response.profile_photo) {
-        setProfilePhoto(`import.meta.env.VITE_API_URL/${response.profile_photo}`);
+        // API URL එකෙන් /api කොටස ඉවත් කරලා ෆොටෝ එකේ සැබෑ URL එක සකස් කිරීම
+        const baseUrl = (import.meta.env.VITE_API_URL || '').replace(/\/api$/, '');
+        const photoPath = response.profile_photo.startsWith('/') ? response.profile_photo : `/${response.profile_photo}`;
+        setProfilePhoto(`${baseUrl}${photoPath}`);
       }
     } catch (err) {
       console.error('Error loading profile photo:', err);
@@ -79,7 +82,10 @@ export const ProfilePage: React.FC = () => {
     try {
       const response = await authService.uploadProfilePhoto(file);
       if (response && response.photo_url) {
-        setProfilePhoto(`import.meta.env.VITE_API_URL${response.photo_url}`);
+        // API URL එකෙන් /api කොටස ඉවත් කරලා ෆොටෝ එකේ සැබෑ URL එක සකස් කිරීම
+        const baseUrl = (import.meta.env.VITE_API_URL || '').replace(/\/api$/, '');
+        const photoPath = response.photo_url.startsWith('/') ? response.photo_url : `/${response.photo_url}`;
+        setProfilePhoto(`${baseUrl}${photoPath}`);
         setSuccess('Profile photo updated successfully!');
         
         const updatedUser = { ...userData, profile_photo: response.photo_url };
