@@ -50,7 +50,7 @@ export const ProfilePage: React.FC = () => {
     try {
       const response = await authService.getProfilePhoto();
       if (response && response.profile_photo) {
-        setProfilePhoto(`http://localhost:8080/${response.profile_photo}`);
+        setProfilePhoto(`import.meta.env.VITE_API_URL/${response.profile_photo}`);
       }
     } catch (err) {
       console.error('Error loading profile photo:', err);
@@ -79,7 +79,7 @@ export const ProfilePage: React.FC = () => {
     try {
       const response = await authService.uploadProfilePhoto(file);
       if (response && response.photo_url) {
-        setProfilePhoto(`http://localhost:8080${response.photo_url}`);
+        setProfilePhoto(`import.meta.env.VITE_API_URL${response.photo_url}`);
         setSuccess('Profile photo updated successfully!');
         
         const updatedUser = { ...userData, profile_photo: response.photo_url };

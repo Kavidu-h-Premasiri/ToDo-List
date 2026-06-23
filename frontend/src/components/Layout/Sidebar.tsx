@@ -35,7 +35,7 @@ export const Sidebar: React.FC = () => {
           setUser(parsedUser);
           // Only set profile photo if it exists and is not empty
           if (parsedUser.profile_photo && parsedUser.profile_photo !== '') {
-            setProfilePhoto(`http://localhost:8080/${parsedUser.profile_photo}`);
+            setProfilePhoto(`import.meta.env.VITE_API_URL/${parsedUser.profile_photo}`);
           } else {
             setProfilePhoto(null);
           }

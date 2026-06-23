@@ -463,13 +463,13 @@ export const MessagesPage: React.FC = () => {
                                     {message.file_type.startsWith('image/') ? (
                                       <div className="relative group">
                                         <img 
-                                          src={`http://localhost:8080${message.file_url}`}
+                                          src={`import.meta.env.VITE_API_URL${message.file_url}`}
                                           alt={message.file_name}
                                           className="max-w-xs max-h-48 rounded-lg cursor-pointer hover:opacity-90 transition border border-white/10"
-                                          onClick={() => window.open(`http://localhost:8080${message.file_url}`, '_blank')}
+                                          onClick={() => window.open(`import.meta.env.VITE_API_URL${message.file_url}`, '_blank')}
                                         />
                                         <a
-                                          href={`http://localhost:8080${message.file_url}`}
+                                          href={`import.meta.env.VITE_API_URL${message.file_url}`}
                                           download={message.file_name}
                                           className="absolute top-2 right-2 p-1.5 bg-black/70 backdrop-blur-sm rounded-full opacity-0 group-hover:opacity-100 transition text-white hover:scale-110"
                                         >
@@ -484,7 +484,7 @@ export const MessagesPage: React.FC = () => {
                                           <p className="text-xs text-gray-400 font-mono">{formatFileSize(message.file_size)}</p>
                                         </div>
                                         <a
-                                          href={`http://localhost:8080${message.file_url}`}
+                                          href={`import.meta.env.VITE_API_URL${message.file_url}`}
                                           download={message.file_name}
                                           className="p-1.5 hover:bg-white/10 rounded-lg transition text-gray-400 hover:text-white"
                                         >

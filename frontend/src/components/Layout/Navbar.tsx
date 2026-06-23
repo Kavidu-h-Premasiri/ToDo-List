@@ -33,7 +33,7 @@ export const Navbar: React.FC = () => {
     setPhotoError(true);
   };
 
-  const profilePhoto = user.profile_photo ? `http://localhost:8080/${user.profile_photo}` : null;
+  const profilePhoto = user.profile_photo ? `import.meta.env.VITE_API_URL/${user.profile_photo}` : null;
 
   return (
     <nav className="bg-black/80 backdrop-blur-xl border-b border-white/10 px-4 sm:px-6 py-4 sticky top-0 z-40 relative overflow-visible">
