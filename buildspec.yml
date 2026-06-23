@@ -27,6 +27,7 @@ phases:
       - cd ..
 
 artifacts:
+  base-directory: 'frontend/dist'
   files:
     - '**/*'
   discard-paths: no
