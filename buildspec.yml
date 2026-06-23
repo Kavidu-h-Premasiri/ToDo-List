@@ -3,19 +3,14 @@ version: 0.2
 phases:
   install:
     runtime-versions:
-      golang: 1.24
-      nodejs: 22
+      golang: 1.25
+      nodejs: 24
+
+  pre_build:
     commands:
       - echo Installing frontend dependencies...
       - cd frontend
       - npm install
-      - cd ..
-
-  pre_build:
-    commands:
-      - echo Installing backend dependencies...
-      - cd backend
-      - go mod download
       - cd ..
 
   build:
@@ -27,21 +22,11 @@ phases:
 
       - echo Building backend...
       - cd backend
+      - go mod download
       - go build -o main .
       - cd ..
-
-  post_build:
-    commands:
-      - echo Deploying frontend to S3...
-      - aws s3 sync frontend/dist/ s3://$S3_BUCKET/ --delete
-      - echo Deployment complete!
 
 artifacts:
   files:
     - '**/*'
-  discard-paths: yes
-
-cache:
-  paths:
-    - frontend/node_modules/**/*
-    - /go/pkg/mod/**/*
+  discard-paths: no
